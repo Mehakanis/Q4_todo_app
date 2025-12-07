@@ -1,0 +1,281 @@
+# Tasks: Frontend Todo Application
+
+**Input**: Design documents from `/specs/002-frontend-todo-app/`
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
+
+**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing.
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
+- Include exact file paths in descriptions
+
+## Path Conventions
+
+- **Single project**: `src/`, `tests/` at repository root
+- **Web app**: `backend/src/`, `frontend/src/`
+- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
+- Paths shown below assume single project - adjust based on plan.md structure
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: Project initialization and basic structure
+
+- [ ] T001 Create Next.js 16+ project structure with TypeScript and Tailwind CSS in `/frontend` directory
+- [ ] T002 [P] Configure TypeScript with strict mode in `/frontend/tsconfig.json`
+- [ ] T003 [P] Set up Prettier and ESLint with Next.js recommended rules in `/frontend`
+- [ ] T004 Create basic directory structure: `/frontend/app`, `/frontend/components`, `/frontend/lib`, `/frontend/types`, `/frontend/hooks`, `/frontend/styles`
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
+
+**⚠️ CRITICAL**: No user story work can begin until this phase is complete
+
+- [ ] T005 Create TypeScript type definitions for User, Task, and API responses in `/frontend/types/index.ts`
+- [ ] T006 Create centralized API client library at `/frontend/lib/api.ts` with JWT token handling
+- [ ] T007 [P] Configure Better Auth with JWT plugin in `/frontend/lib/auth.ts`
+- [ ] T008 Create ProtectedRoute component at `/frontend/components/ProtectedRoute.tsx`
+- [ ] T009 [P] Implement global error boundary component at `/frontend/components/ErrorBoundary.tsx`
+- [ ] T010 Create LoadingSpinner component at `/frontend/components/LoadingSpinner.tsx`
+- [ ] T011 [P] Create ToastNotification component at `/frontend/components/ToastNotification.tsx`
+- [ ] T012 Implement utility functions in `/frontend/lib/utils.ts`
+- [ ] T013 [P] Set up environment variables configuration in `/frontend/.env.example`
+
+**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+
+---
+
+## Phase 3: User Story 1 - Authentication (Priority: P1) 🎯 MVP
+
+**Goal**: Implement user authentication with signup, signin, and protected routes
+
+**Independent Test**: Can sign up for account, sign in, access protected dashboard, and sign out successfully
+
+### Implementation for User Story 1
+
+- [ ] T014 [US1] Create signup page component at `/frontend/app/signup/page.tsx`
+- [ ] T015 [P] [US1] Create signin page component at `/frontend/app/signin/page.tsx`
+- [ ] T016 [US1] Create TaskForm component at `/frontend/components/TaskForm.tsx`
+- [ ] T017 [P] [US1] Create TaskList component at `/frontend/components/TaskList.tsx`
+- [ ] T018 [US1] Create TaskItem component at `/frontend/components/TaskItem.tsx`
+- [ ] T019 [US1] Create FilterControls component at `/frontend/components/FilterControls.tsx`
+- [ ] T020 [P] [US1] Create SortControls component at `/frontend/components/SortControls.tsx`
+- [ ] T021 [US1] Create SearchBar component at `/frontend/components/SearchBar.tsx`
+- [ ] T022 [US1] Implement dashboard page with authentication check at `/frontend/app/dashboard/page.tsx`
+- [ ] T023 [P] [US1] Add signout functionality to header navigation
+- [ ] T024 [US1] Integrate API client for authentication endpoints in signup/signin pages
+- [ ] T025 [US1] Add form validation and error handling to signup/signin forms
+- [ ] T026 [P] [US1] Implement JWT token management and storage
+
+**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
+
+---
+
+## Phase 4: User Story 2 - Basic Task Management (Priority: P1)
+
+**Goal**: Implement core task CRUD operations with proper API integration
+
+**Independent Test**: Can create, read, update, and delete tasks successfully with proper error handling
+
+### Implementation for User Story 2
+
+- [ ] T027 [US2] Enhance TaskForm component to handle task creation and updates with validation
+- [ ] T028 [P] [US2] Update TaskList component to fetch and display tasks from API
+- [ ] T029 [US2] Enhance TaskItem component with edit, delete, and toggle complete functionality
+- [ ] T030 [P] [US2] Implement task creation endpoint integration in TaskForm
+- [ ] T031 [US2] Implement task update endpoint integration in TaskItem
+- [ ] T032 [P] [US2] Implement task deletion endpoint integration in TaskItem
+- [ ] T033 [US2] Implement task completion toggle endpoint integration in TaskItem
+- [ ] T034 [P] [US2] Add loading states and error handling to all task operations
+- [ ] T035 [US2] Add optimistic UI updates for task operations
+- [ ] T036 [P] [US2] Implement proper error messages and user feedback for task operations
+
+**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
+
+---
+
+## Phase 5: User Story 3 - Task Organization (Priority: P2)
+
+**Goal**: Implement filtering, sorting, and search functionality for task management
+
+**Independent Test**: Can filter tasks by status, sort by various criteria, and search by keywords
+
+### Implementation for User Story 3
+
+- [ ] T037 [US3] Enhance FilterControls component with status, priority, due date, and tags filtering
+- [ ] T038 [P] [US3] Enhance SortControls component with multiple sorting options and directions
+- [ ] T039 [US3] Enhance SearchBar component with real-time search and debouncing
+- [ ] T040 [P] [US3] Integrate filtering logic with API client and query parameters
+- [ ] T041 [US3] Integrate sorting logic with API client and query parameters
+- [ ] T042 [P] [US3] Integrate search logic with API client and query parameters
+- [ ] T043 [US3] Update TaskList component to handle filtered, sorted, and searched results
+- [ ] T044 [P] [US3] Add query parameter handling to maintain filter/sort/search state in URL
+- [ ] T045 [US3] Implement multiple view modes (list, grid, kanban) in TaskList component
+
+**Checkpoint**: At this point, User Stories 1, 2, AND 3 should all work independently
+
+---
+
+## Phase 6: User Story 4 - Responsive Design/UX (Priority: P2)
+
+**Goal**: Implement responsive design, dark mode, and accessibility features
+
+**Independent Test**: Application works seamlessly across mobile, tablet, and desktop with dark mode toggle
+
+### Implementation for User Story 4
+
+- [ ] T046 [US4] Implement responsive design with Tailwind CSS breakpoints for all components
+- [ ] T047 [P] [US4] Create DarkModeToggle component at `/frontend/components/DarkModeToggle.tsx`
+- [ ] T048 [US4] Implement dark mode using next-themes with proper color palette
+- [ ] T049 [P] [US4] Create KeyboardShortcuts component at `/frontend/components/KeyboardShortcuts.tsx`
+- [ ] T050 [US4] Implement keyboard shortcuts for common actions (Ctrl+K for search, etc.)
+- [ ] T051 [P] [US4] Add comprehensive loading states throughout the application
+- [ ] T052 [US4] Enhance error handling UI with user-friendly messages
+- [ ] T053 [P] [US4] Implement accessibility features (WCAG 2.1 AA compliance) across all components
+- [ ] T054 [US4] Add proper ARIA labels and semantic HTML to all components
+- [ ] T055 [P] [US4] Implement proper focus management and keyboard navigation
+
+**Checkpoint**: At this point, User Stories 1, 2, 3, AND 4 should all work independently
+
+---
+
+## Phase 7: User Story 5 - Advanced Features (Priority: P3)
+
+**Goal**: Implement export/import, drag-and-drop, bulk operations, and statistics
+
+**Independent Test**: Can export/import tasks, reorder with drag-drop, perform bulk operations, and view statistics
+
+### Implementation for User Story 5
+
+- [ ] T056 [US5] Create TaskStatistics component at `/frontend/components/TaskStatistics.tsx`
+- [ ] T057 [P] [US5] Create TaskDetailModal component at `/frontend/components/TaskDetailModal.tsx`
+- [ ] T058 [US5] Create ExportImportControls component at `/frontend/components/ExportImportControls.tsx`
+- [ ] T059 [P] [US5] Implement CSV and JSON export functionality for tasks
+- [ ] T060 [US5] Implement CSV and JSON import functionality for tasks with validation
+- [ ] T061 [P] [US5] Create BulkActions component at `/frontend/components/BulkActions.tsx`
+- [ ] T062 [US5] Implement bulk operations (delete, mark complete, change priority) for selected tasks
+- [ ] T063 [P] [US5] Create PaginationControls component at `/frontend/components/PaginationControls.tsx`
+- [ ] T064 [US5] Implement pagination for large task lists with API integration
+- [ ] T065 [P] [US5] Implement drag-and-drop reordering using @dnd-kit/core
+- [ ] T066 [US5] Implement undo/redo functionality using useReducer with history pattern
+- [ ] T067 [P] [US5] Add real-time updates with polling mechanism for task changes
+- [ ] T068 [US5] Implement inline editing for tasks in the list view
+
+**Checkpoint**: At this point, all user stories should be independently functional
+
+---
+
+## Phase 8: Enhanced Features
+
+**Goal**: Implement offline functionality and performance optimizations
+
+- [ ] T069 [P] Set up service workers for PWA functionality
+- [ ] T070 Implement offline data storage using IndexedDB
+- [ ] T071 Create sync mechanism for offline changes when connection restored
+- [ ] T072 [P] Optimize performance with code splitting and lazy loading
+- [ ] T073 Add caching strategies for API responses and static assets
+- [ ] T074 [P] Implement proper error boundaries for all components
+- [ ] T075 Add comprehensive logging and error tracking
+
+---
+
+## Phase 9: Polish & Cross-Cutting Concerns
+
+**Purpose**: Improvements that affect multiple user stories
+
+- [ ] T076 [P] Add comprehensive unit tests for all components using React Testing Library
+- [ ] T077 Add integration tests for API client and user flows
+- [ ] T078 [P] Add end-to-end tests for critical user journeys using Playwright
+- [ ] T079 Run accessibility tests and ensure WCAG 2.1 AA compliance
+- [ ] T080 [P] Conduct performance testing and optimize Lighthouse scores
+- [ ] T081 Add documentation updates for the frontend application
+- [ ] T082 [P] Set up CI/CD pipeline with GitHub Actions for the frontend
+- [ ] T083 Run security audit and address any vulnerabilities
+- [ ] T084 [P] Final code review and refactoring
+- [ ] T085 Deploy to staging environment for final validation
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)**: No dependencies - can start immediately
+- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
+- **User Stories (Phase 3+)**: All depend on Foundational phase completion
+  - User stories can then proceed in parallel (if staffed)
+  - Or sequentially in priority order (P1 → P2 → P3)
+- **Enhanced Features (Phase 8)**: Depends on all user stories being complete
+- **Polish (Final Phase)**: Depends on all desired user stories being complete
+
+### User Story Dependencies
+
+- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
+- **User Story 2 (P1)**: Can start after Foundational (Phase 2) - Depends on US1 (authentication)
+- **User Story 3 (P2)**: Can start after Foundational (Phase 2) - Depends on US2 (tasks exist to organize)
+- **User Story 4 (P2)**: Can start after Foundational (Phase 2) - Can work in parallel with other stories
+- **User Story 5 (P3)**: Can start after Foundational (Phase 2) - Depends on US2 (tasks exist to enhance)
+
+### Within Each User Story
+
+- Models before services
+- Services before components
+- Components before page integration
+- Core functionality before enhancements
+- Story complete before moving to next priority
+
+### Parallel Opportunities
+
+- All Setup tasks marked [P] can run in parallel
+- All Foundational tasks marked [P] can run in parallel (within Phase 2)
+- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
+- All components within a user story marked [P] can run in parallel
+- Different user stories can be worked on in parallel by different team members
+- Testing tasks can run in parallel with implementation tasks
+
+## Implementation Strategy
+
+### MVP First (User Story 1 Only)
+
+1. Complete Phase 1: Setup
+2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
+3. Complete Phase 3: User Story 1
+4. **STOP and VALIDATE**: Test User Story 1 independently
+5. Deploy/demo if ready
+
+### Incremental Delivery
+
+1. Complete Setup + Foundational → Foundation ready
+2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
+3. Add User Story 2 → Test independently → Deploy/Demo
+4. Add User Story 3 → Test independently → Deploy/Demo
+5. Each story adds value without breaking previous stories
+
+### Parallel Team Strategy
+
+With multiple developers:
+
+1. Team completes Setup + Foundational together
+2. Once Foundational is done:
+   - Developer A: User Story 1
+   - Developer B: User Story 2
+   - Developer C: User Story 3
+3. Stories complete and integrate independently
+
+---
+
+## Notes
+
+- [P] tasks = different files, no dependencies
+- [Story] label maps task to specific user story for traceability
+- Each user story should be independently completable and testable
+- Verify tests fail before implementing
+- Commit after each task or logical group
+- Stop at any checkpoint to validate story independently
+- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
