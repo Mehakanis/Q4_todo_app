@@ -108,24 +108,24 @@ export default function TaskForm({
         response = await api.createTask(userId, formData);
       }
 
-      if (response.success && response.data) {
-        // Reset form after successful creation (not for updates)
-        if (!initialData) {
-          setFormData({
-            title: "",
-            description: "",
-            priority: "medium",
-            due_date: "",
-            tags: [],
-          });
-          setTagInput("");
-        }
-
-        // Call success callback
-        onSuccess?.(response.data);
-      } else {
+      if (!response.success || !response.data) {
         throw new Error(response.message || "Failed to save task");
       }
+
+      // Reset form after successful creation (not for updates)
+      if (!initialData) {
+        setFormData({
+          title: "",
+          description: "",
+          priority: "medium",
+          due_date: "",
+          tags: [],
+        });
+        setTagInput("");
+      }
+
+      // Call success callback
+      onSuccess?.(response.data);
     } catch (error: any) {
       console.error("Form submission error:", error);
 

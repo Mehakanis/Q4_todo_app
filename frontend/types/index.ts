@@ -50,7 +50,7 @@ export interface TaskFormData {
 
 export interface TaskQueryParams {
   status?: "all" | "pending" | "completed";
-  sort?: "created" | "title" | "updated" | "priority" | "due_date";
+  sort?: "created" | "title" | "updated" | "priority" | "due_date" | `${"created" | "title" | "updated" | "priority" | "due_date"}:${"asc" | "desc"}`;
   search?: string;
   page?: number;
   limit?: number;

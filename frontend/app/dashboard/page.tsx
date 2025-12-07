@@ -21,16 +21,17 @@ import FilterControls from "@/components/FilterControls";
 import SortControls from "@/components/SortControls";
 import SearchBar from "@/components/SearchBar";
 import { api } from "@/lib/api";
+import { LoadingState } from "@/types";
 
 function DashboardContent() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [loadingState, setLoadingState] = useState<LoadingState>("loading");
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Task; direction: "asc" | "desc" }>({
-    key: "created_at",
+  const [sortConfig, setSortConfig] = useState<{ key: "created" | "title" | "updated" | "priority" | "due_date"; direction: "asc" | "desc" }>({
+    key: "created",
     direction: "desc"
   });
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,75 +57,57 @@ function DashboardContent() {
     loadUser();
   }, []);
 
+  // Load tasks when filter, sort, or search changes
   useEffect(() => {
-    // Apply filtering, searching, and sorting
-    let result = [...tasks];
-
-    // Apply filter
-    if (filter === "pending") {
-      result = result.filter(task => !task.completed);
-    } else if (filter === "completed") {
-      result = result.filter(task => task.completed);
+    if (user) {
+      loadTasks(user.id);
     }
-
-    // Apply search
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(task =>
-        task.title.toLowerCase().includes(query) ||
-        (task.description && task.description.toLowerCase().includes(query)) ||
-        task.tags?.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-
-    // Apply sorting
-    result.sort((a, b) => {
-      // @ts-ignore - We know these are comparable values
-      let aValue = a[sortConfig.key];
-      let bValue = b[sortConfig.key];
-
-      // Handle date comparison
-      if (sortConfig.key === "due_date" || sortConfig.key === "created_at" || sortConfig.key === "updated_at") {
-        if (aValue && bValue) {
-          aValue = new Date(aValue);
-          bValue = new Date(bValue);
-        } else if (aValue) {
-          return sortConfig.direction === "asc" ? -1 : 1;
-        } else if (bValue) {
-          return sortConfig.direction === "asc" ? 1 : -1;
-        } else {
-          return 0;
-        }
-      }
-
-      // Handle string comparison
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (aValue < bValue) {
-        return sortConfig.direction === "asc" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === "asc" ? 1 : -1;
-      }
-      return 0;
-    });
-
-    setFilteredTasks(result);
-  }, [tasks, filter, sortConfig, searchQuery]);
+  }, [filter, sortConfig, searchQuery, user]);
 
   const loadTasks = async (userId: string) => {
     try {
-      const response = await api.getTasks(userId);
-      if (response.success) {
-        setTasks(response.data || []);
+      setLoadingState("loading");
+
+      // Convert sort key to API format
+      let apiSortKey: string;
+      switch (sortConfig.key) {
+        case "created":
+          apiSortKey = "created";
+          break;
+        case "updated":
+          apiSortKey = "updated";
+          break;
+        case "due_date":
+          apiSortKey = "due_date";
+          break;
+        case "title":
+          apiSortKey = "title";
+          break;
+        case "priority":
+          apiSortKey = "priority";
+          break;
+        default:
+          apiSortKey = "created";
+      }
+
+      const queryParams: TaskQueryParams = {
+        status: filter,
+        sort: `${apiSortKey}:${sortConfig.direction}`,
+        search: searchQuery,
+        page: 1,
+        limit: 50, // Adjust as needed
+      };
+
+      const response = await api.getTasks(userId, queryParams);
+      if (response.success && response.data) {
+        setTasks(response.data.data || []);
+        setLoadingState("success");
       } else {
         throw new Error(response.message || "Failed to load tasks");
       }
     } catch (error) {
       console.error("Failed to load tasks:", error);
+      setLoadingState("error");
     }
   };
 
@@ -154,10 +137,10 @@ function DashboardContent() {
     }
   };
 
-  const handleSortChange = (key: keyof Task) => {
+  const handleSortChange = (key: "created" | "title" | "updated" | "priority" | "due_date", direction?: "asc" | "desc") => {
     setSortConfig(prev => ({
       key,
-      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc"
+      direction: direction || (prev.key === key && prev.direction === "asc" ? "desc" : "asc")
     }));
   };
 
@@ -287,14 +270,14 @@ function DashboardContent() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  Your Tasks ({filteredTasks.length})
+                  Your Tasks ({tasks.length})
                 </h2>
 
                 <div className="flex flex-wrap gap-2">
                   <FilterControls
                     currentFilter={filter}
                     onFilterChange={handleFilterChange}
-                    taskCount={{
+                    taskCounts={{
                       all: tasks.length,
                       pending: tasks.filter(t => !t.completed).length,
                       completed: tasks.filter(t => t.completed).length
@@ -320,11 +303,11 @@ function DashboardContent() {
 
               {/* Task List */}
               <TaskList
-                tasks={filteredTasks}
+                tasks={tasks}
                 userId={user?.id || ""}
                 onTaskChange={handleTaskUpdated}
                 onError={handleTaskError}
-                isLoading={isLoading}
+                isLoading={loadingState === "loading"}
               />
             </div>
           </div>

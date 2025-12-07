@@ -79,7 +79,7 @@ async function apiFetch<T>(
 
   // Attach JWT token if available
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
   }
 
   const url = `${API_BASE_URL}${endpoint}`;

@@ -45,10 +45,7 @@ export default function TaskItem({
     try {
       const response = await api.toggleTaskComplete(userId, task.id, newCompleted);
 
-      if (response.success) {
-        // Call success callback to refresh task list
-        onSuccess?.();
-      } else {
+      if (!response.success) {
         // Revert optimistic update
         setOptimisticCompleted(!newCompleted);
         throw new Error(response.message || "Failed to toggle task");
@@ -74,10 +71,7 @@ export default function TaskItem({
     try {
       const response = await api.deleteTask(userId, task.id);
 
-      if (response.success) {
-        // Call success callback to refresh task list
-        onSuccess?.();
-      } else {
+      if (!response.success) {
         throw new Error(response.message || "Failed to delete task");
       }
     } catch (error: any) {
