@@ -7,15 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest",
-    "test:unit": "vitest __tests__/unit",
-    "test:integration": "vitest __tests__/integration",
-    "test:accessibility": "vitest __tests__/accessibility",
-    "test:performance": "vitest __tests__/performance",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "test:watch": "vitest --watch"
+    "test:ci": "jest --ci --coverage --maxWorkers=2"
   },
   "dependencies": {
     "@better-auth/client": "^0.0.2-alpha.3",
@@ -40,6 +36,10 @@
   "devDependencies": {
     "@next/bundle-analyzer": "^16.0.8",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -47,6 +47,8 @@
     "eslint-config-next": "16.0.7",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
     "prettier": "^3.7.4",
     "tailwindcss": "^4",
     "typescript": "^5"
