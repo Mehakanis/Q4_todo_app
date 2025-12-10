@@ -11,7 +11,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { authClient } from "@/lib/auth";
 import { isValidEmail, getPasswordStrength } from "@/lib/utils";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -76,20 +76,34 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.signup({
-        name: formData.name.trim(),
+      // Use Better Auth signup
+      const result = await authClient.signUp.email({
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
+        name: formData.name.trim(),
       });
 
-      if (response.success) {
-        // Redirect to dashboard or intended destination
-        const redirectPath = sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
-        sessionStorage.removeItem("redirectAfterLogin");
-        router.push(redirectPath);
-      } else {
-        setApiError(response.message || "Signup failed. Please try again.");
+      if (result.error) {
+        setApiError(result.error.message || "Signup failed. Please try again.");
+        return;
       }
+
+      // Get JWT token from Better Auth
+      const { data: tokenData } = await authClient.token();
+      if (tokenData?.token) {
+        // Store token for API calls (fallback)
+        sessionStorage.setItem("auth_token", tokenData.token);
+
+        // Store user data
+        if (result.data?.user) {
+          sessionStorage.setItem("user", JSON.stringify(result.data.user));
+        }
+      }
+
+      // Redirect to dashboard or intended destination
+      const redirectPath = sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
+      sessionStorage.removeItem("redirectAfterLogin");
+      router.push(redirectPath);
     } catch (error: any) {
       setApiError(error.message || "An error occurred during signup");
     } finally {

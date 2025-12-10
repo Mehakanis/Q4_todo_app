@@ -1,5 +1,5 @@
 /**
- * Better Auth Configuration
+ * Better Auth Client Configuration
  *
  * Configures Better Auth with JWT plugin enabled
  * Handles session management and token issuance
@@ -7,24 +7,23 @@
  */
 
 import { createAuthClient } from "better-auth/react";
+import { jwtClient } from "better-auth/client/plugins";
 
 /**
  * Better Auth Client Configuration
  *
  * This client is used throughout the frontend for authentication
+ * Features:
+ * - Email/password authentication
+ * - JWT token generation for API calls
+ * - Session management via cookies
+ * - Client-side session storage
  */
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000",
+  baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
-  // Session configuration
-  session: {
-    cookieName: "better-auth.session",
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // Update session every 24 hours
-  },
-
-  // Storage configuration (for client-side token management)
-  storage: typeof window !== "undefined" ? sessionStorage : undefined,
+  // Plugins (JWT client for token generation)
+  plugins: [jwtClient()],
 });
 
 /**

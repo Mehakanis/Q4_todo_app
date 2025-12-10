@@ -11,7 +11,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { authClient } from "@/lib/auth";
 import { isValidEmail } from "@/lib/utils";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -55,19 +55,33 @@ export default function SigninPage() {
     setIsLoading(true);
 
     try {
-      const response = await api.signin({
+      // Use Better Auth signin
+      const result = await authClient.signIn.email({
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
       });
 
-      if (response.success) {
-        // Redirect to dashboard or intended destination
-        const redirectPath = sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
-        sessionStorage.removeItem("redirectAfterLogin");
-        router.push(redirectPath);
-      } else {
-        setApiError(response.message || "Invalid email or password");
+      if (result.error) {
+        setApiError(result.error.message || "Invalid email or password");
+        return;
       }
+
+      // Get JWT token from Better Auth
+      const { data: tokenData } = await authClient.token();
+      if (tokenData?.token) {
+        // Store token for API calls (fallback)
+        sessionStorage.setItem("auth_token", tokenData.token);
+
+        // Store user data
+        if (result.data?.user) {
+          sessionStorage.setItem("user", JSON.stringify(result.data.user));
+        }
+      }
+
+      // Redirect to dashboard or intended destination
+      const redirectPath = sessionStorage.getItem("redirectAfterLogin") || "/dashboard";
+      sessionStorage.removeItem("redirectAfterLogin");
+      router.push(redirectPath);
     } catch (error: any) {
       setApiError(error.message || "An error occurred during sign in");
     } finally {

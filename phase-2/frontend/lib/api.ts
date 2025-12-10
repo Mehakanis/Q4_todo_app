@@ -21,6 +21,7 @@ import {
   ImportResult,
   ExportFormat,
 } from "@/types";
+import { authClient } from "@/lib/auth";
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -28,16 +29,33 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // ms
 
 /**
- * Get JWT token from secure storage
+ * Get JWT token from Better Auth session
+ *
+ * Priority:
+ * 1. Better Auth JWT token (primary)
+ * 2. SessionStorage token (fallback for backwards compatibility)
  */
-const getAuthToken = (): string | null => {
-  if (typeof window === "undefined") return null;
+async function getAuthToken(): Promise<string | null> {
+  // Try Better Auth session first
+  try {
+    const { data: tokenData } = await authClient.token();
+    if (tokenData?.token) {
+      return tokenData.token;
+    }
+  } catch (error) {
+    console.warn("Better Auth token not available:", error);
+  }
 
-  // Try to get token from sessionStorage (more secure than localStorage)
-  // In production, this should be httpOnly cookies handled by the backend
-  const token = sessionStorage.getItem("auth_token");
-  return token;
-};
+  // Fallback to sessionStorage for backwards compatibility
+  if (typeof window !== "undefined") {
+    const token = sessionStorage.getItem("auth_token");
+    if (token) {
+      return token;
+    }
+  }
+
+  return null;
+}
 
 /**
  * Delay utility for retry logic
@@ -71,7 +89,7 @@ async function apiFetch<T>(
   options: RequestInit = {},
   retries = MAX_RETRIES
 ): Promise<ApiResponse<T>> {
-  const token = getAuthToken();
+  const token = await getAuthToken();
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -249,7 +267,7 @@ export class ApiClient {
   // ==================== Export/Import Methods ====================
 
   async exportTasks(userId: string, format: ExportFormat): Promise<Blob> {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     const headers: HeadersInit = {};
 
     if (token) {
@@ -272,7 +290,7 @@ export class ApiClient {
     userId: string,
     file: File
   ): Promise<ApiResponse<ImportResult>> {
-    const token = getAuthToken();
+    const token = await getAuthToken();
     const formData = new FormData();
     formData.append("file", file);
 
