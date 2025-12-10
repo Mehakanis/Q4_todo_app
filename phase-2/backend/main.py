@@ -1,0 +1,160 @@
+"""
+FastAPI application entry point for Todo backend.
+
+This module initializes the FastAPI application, configures CORS middleware,
+registers API routes, and provides basic health check endpoints.
+"""
+
+import os
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+
+# Import routes
+from routes import auth, tasks
+
+# Import middleware
+from middleware.rate_limiting import limiter, get_rate_limit_exceeded_handler
+from middleware.logging_middleware import (
+    RequestLoggingMiddleware,
+    ErrorHandlingMiddleware,
+)
+from middleware.security_headers import SecurityHeadersMiddleware
+from middleware.timeout_middleware import TimeoutMiddleware
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """
+    Application lifespan manager for startup and shutdown events.
+
+    This handles database initialization and cleanup.
+    """
+    # Startup: Initialize database connection
+    print("🚀 Starting up Todo backend...")
+    print("✅ Security middleware enabled")
+    print("✅ Rate limiting enabled")
+    print("✅ Performance monitoring enabled")
+
+    yield
+
+    # Shutdown: Clean up resources
+    print("🛑 Shutting down Todo backend...")
+
+
+# Initialize FastAPI application
+app = FastAPI(
+    title="Todo API",
+    description="FastAPI backend for Todo application with JWT authentication and Neon PostgreSQL",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    lifespan=lifespan,
+)
+
+# Register rate limiter state
+app.state.limiter = limiter
+
+# Add rate limit exceeded handler
+app.add_exception_handler(RateLimitExceeded, get_rate_limit_exceeded_handler())
+
+# Configure CORS (must be first)
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add middleware in correct order (LIFO - last added runs first)
+# Order matters: outer middleware wraps inner middleware
+
+# 1. Security headers (outermost - should be on all responses)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 2. Request logging (log all requests/responses)
+app.add_middleware(RequestLoggingMiddleware)
+
+# 3. Timeout handling
+timeout_seconds = int(os.getenv("REQUEST_TIMEOUT", "30"))
+app.add_middleware(TimeoutMiddleware, timeout_seconds=timeout_seconds)
+
+# 4. Error handling (catch all unhandled errors)
+app.add_middleware(ErrorHandlingMiddleware)
+
+# Register routers
+app.include_router(auth.router)
+app.include_router(tasks.router)
+
+
+@app.get("/", tags=["health"])
+async def root() -> JSONResponse:
+    """
+    Root endpoint with API information.
+
+    Returns:
+        JSONResponse: API metadata and status
+    """
+    return JSONResponse(
+        content={
+            "success": True,
+            "message": "Todo API is running",
+            "version": "1.0.0",
+            "docs": "/docs",
+            "redoc": "/redoc",
+        }
+    )
+
+
+@app.get("/health", tags=["health"])
+async def health_check() -> JSONResponse:
+    """
+    Health check endpoint.
+
+    Returns:
+        JSONResponse: API health status
+    """
+    return JSONResponse(
+        content={
+            "success": True,
+            "status": "healthy",
+            "message": "API is operational",
+        }
+    )
+
+
+@app.get("/api/health", tags=["health"])
+async def api_health_check() -> JSONResponse:
+    """
+    API health check endpoint under /api prefix.
+
+    Returns:
+        JSONResponse: API health status
+    """
+    return JSONResponse(
+        content={
+            "success": True,
+            "status": "healthy",
+            "message": "API is operational",
+        }
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=True,
+        log_level=os.getenv("LOG_LEVEL", "info").lower(),
+    )
