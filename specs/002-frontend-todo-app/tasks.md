@@ -162,8 +162,8 @@
 - [X] T062 [US5] Implement bulk operations (delete, mark complete, change priority) for selected tasks
 - [X] T063 [P] [US5] Create PaginationControls component at `/frontend/components/PaginationControls.tsx`
 - [X] T064 [US5] Implement pagination for large task lists with API integration
-- [ ] T065 [P] [US5] Implement drag-and-drop reordering using @dnd-kit/core
-- [ ] T066 [US5] Implement undo/redo functionality using useReducer with history pattern
+- [X] T065 [P] [US5] Implement drag-and-drop reordering using @dnd-kit/core
+- [X] T066 [US5] Implement undo/redo functionality using useReducer with history pattern
 - [X] T067 [P] [US5] Add real-time updates with polling mechanism for task changes
 - [X] T068 [US5] Implement inline editing for tasks in the list view
 
