@@ -6,7 +6,6 @@ This module tests the authentication API endpoints including signup, signin, and
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import Session
 
 from main import app
 

@@ -7,7 +7,7 @@ This module tests all task CRUD operations with user isolation.
 import pytest
 from datetime import datetime, timedelta
 from httpx import AsyncClient
-from sqlmodel import Session, select
+from sqlmodel import Session
 
 from models import Task, User
 

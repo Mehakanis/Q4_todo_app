@@ -7,8 +7,7 @@ This module tests the advanced task management features with real database opera
 import csv
 import io
 import json
-from datetime import date, datetime, timedelta
-from typing import Generator
+from datetime import datetime, timedelta
 
 import pytest
 from fastapi import status

@@ -5,7 +5,7 @@ This module tests all task-related API endpoints through HTTP requests,
 validating status codes, response structure, and data integrity.
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from uuid import uuid4
 
 import pytest
@@ -251,7 +251,6 @@ class TestGetTasksAPI:
         """Test user isolation - users only see their own tasks."""
         # Arrange
         user_id = str(auth_user["user"].id)
-        other_user_id = str(other_user["user"].id)
 
         # Create tasks for both users
         session.add(Task(user_id=auth_user["user"].id, title="My Task", completed=False))

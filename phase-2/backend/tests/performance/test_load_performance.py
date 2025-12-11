@@ -7,8 +7,6 @@ and maintain performance under load.
 
 import concurrent.futures
 import time
-from datetime import datetime
-from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -205,11 +203,9 @@ class TestConcurrentWriteOperations:
         # Verify data integrity - each task should be updated correctly
         for status, user_id, task_id in results:
             if status == 200:
-                response = client.get(
-                    f"/api/{user_id}/tasks/{task_id}",
-                    headers={"Authorization": f"Bearer {generate_jwt_token(user_id, f'user{user_id}@example.com')}"},
-                )
-                # Note: This might fail due to token mismatch, adjust as needed
+                # Verification could be added here by checking task state
+                # client.get(f"/api/{user_id}/tasks/{task_id}", headers={...})
+                pass
 
     def test_concurrent_delete_tasks_completes_successfully(
         self, client: TestClient, load_test_users, session
