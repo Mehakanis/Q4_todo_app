@@ -407,9 +407,10 @@ jobs:
       - name: Check for secrets in code
         uses: trufflesecurity/trufflehog@main
         with:
-          path: ./phase-2/frontend
+          path: .
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
+          only_verified: true
 
   deploy-staging:
     name: Deploy to Staging
