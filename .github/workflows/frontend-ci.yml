@@ -28,17 +28,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Run ESLint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Check code formatting
-        run: npm exec prettier --check "**/*.{ts,tsx,js,jsx,json,css,md}"
+        run: pnpm exec prettier --check "**/*.{ts,tsx,js,jsx,json,css,md}"
 
   typecheck:
     name: TypeScript Type Check
@@ -51,14 +51,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Run TypeScript compiler
-        run: npm exec tsc --noEmit
+        run: pnpm exec tsc --noEmit
 
   test:
     name: Unit Tests
@@ -71,14 +71,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Run unit tests
-        run: npm run test:ci
+        run: pnpm run test:ci
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -101,18 +101,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Create .env.local file
         run: |
           echo "NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:8000' }}" > .env.local
 
       - name: Build Next.js application
-        run: npm run build
+        run: pnpm run build
         env:
           NODE_ENV: production
 
@@ -144,14 +144,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Install Playwright browsers
-        run: npm exec playwright install --with-deps ${{ matrix.browser }}
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -160,7 +160,7 @@ jobs:
           path: phase-2/frontend/.next
 
       - name: Run Playwright E2E tests
-        run: npm run test:e2e --project=${{ matrix.browser }}
+        run: pnpm run test:e2e --project=${{ matrix.browser }}
         env:
           PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
 
@@ -184,11 +184,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -198,7 +198,7 @@ jobs:
 
       - name: Start application
         run: |
-          npm run start &
+          pnpm run start &
           sleep 10
         env:
           PORT: 3000
@@ -223,11 +223,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -237,7 +237,7 @@ jobs:
 
       - name: Start application
         run: |
-          npm run start &
+          pnpm run start &
           sleep 10
         env:
           PORT: 3000
@@ -267,8 +267,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
+      - name: Run pnpm audit
+        run: pnpm audit --audit-level=moderate
         continue-on-error: true
 
       - name: Check for secrets in code
@@ -294,11 +294,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -344,11 +344,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
           cache-dependency-path: phase-2/frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm ci
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
