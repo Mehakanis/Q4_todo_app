@@ -2,13 +2,13 @@ name: Backend CI/CD
 
 on:
   push:
-    branches: [api.phase_2, main]
+    branches: [phase_2, api.phase_2, main]
     paths:
-      - 'backend/**'
+      - 'phase-2/backend/**'
   pull_request:
-    branches: [api.phase_2, main]
+    branches: [phase_2, api.phase_2, main]
     paths:
-      - 'backend/**'
+      - 'phase-2/backend/**'
 
 jobs:
   test:
@@ -30,17 +30,17 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install dependencies
-        working-directory: ./backend
+        working-directory: ./phase-2/backend
         run: |
           uv sync --extra dev
 
       - name: Run linting
-        working-directory: ./backend
+        working-directory: ./phase-2/backend
         run: |
           uv run ruff check .
 
       - name: Run tests with coverage
-        working-directory: ./backend
+        working-directory: ./phase-2/backend
         env:
           ENVIRONMENT: test
           BETTER_AUTH_SECRET: test-secret-key-for-ci-testing-only
@@ -51,7 +51,7 @@ jobs:
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
         with:
-          file: ./backend/coverage.xml
+          file: ./phase-2/backend/coverage.xml
           flags: backend
           name: backend-coverage
         if: success()
@@ -70,6 +70,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
-        working-directory: ./backend
+        working-directory: ./phase-2/backend
         run: |
           docker build -t todo-backend:latest .
