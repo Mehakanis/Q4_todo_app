@@ -99,13 +99,13 @@ export function capitalize(text: string): string {
 /**
  * Debounce function for search inputs
  */
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
+export function debounce<TArgs extends unknown[], TReturn>(
+  func: (...args: TArgs) => TReturn,
   delay: number
-): ((...args: Parameters<T>) => void) & { cancel?: () => void } {
+): ((...args: TArgs) => void) & { cancel?: () => void } {
   let timeoutId: NodeJS.Timeout | null = null;
 
-  const debounced = function (...args: Parameters<T>) {
+  const debounced = function (...args: TArgs) {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
@@ -116,14 +116,14 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 
   // Add cancel method to clear pending timeout
-  (debounced as any).cancel = () => {
+  (debounced as typeof debounced & { cancel: () => void }).cancel = () => {
     if (timeoutId) {
       clearTimeout(timeoutId);
       timeoutId = null;
     }
   };
 
-  return debounced as ((...args: Parameters<T>) => void) & { cancel?: () => void };
+  return debounced as ((...args: TArgs) => void) & { cancel?: () => void };
 }
 
 /**

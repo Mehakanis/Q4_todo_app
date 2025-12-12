@@ -221,8 +221,17 @@ export function measureSync<T>(name: string, operation: () => T): T {
   }
 }
 
+// Web Vitals metric type
+interface WebVitalsMetric {
+  name: string;
+  value: number;
+  id: string;
+  delta?: number;
+  rating?: 'good' | 'needs-improvement' | 'poor';
+}
+
 // Report web vitals to console or analytics
-export function reportWebVitals(metric: any): void {
+export function reportWebVitals(metric: WebVitalsMetric): void {
   if (process.env.NODE_ENV === "development") {
     console.log(metric.name, metric.value);
   }

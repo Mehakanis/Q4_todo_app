@@ -27,9 +27,6 @@ export default function OfflineIndicator() {
       setShowNotification(true);
     };
 
-    // Set initial state
-    setIsOnline(navigator.onLine);
-
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 

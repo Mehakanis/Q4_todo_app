@@ -45,7 +45,7 @@ export function useLogger(componentName?: string) {
   );
 
   const error = useCallback(
-    (message: string, context?: Record<string, any>, err?: Error) => {
+    (message: string, context?: Record<string, unknown>, err?: Error) => {
       logger.error(
         componentName ? `[${componentName}] ${message}` : message,
         context,

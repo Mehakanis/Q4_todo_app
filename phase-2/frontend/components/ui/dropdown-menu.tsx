@@ -55,19 +55,23 @@ const DropdownMenuTrigger = React.forwardRef<
   }
 >(({ className, children, isOpen, setIsOpen, asChild, ...props }, ref) => {
   if (asChild && React.isValidElement(children)) {
-    const child = children as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>;
+    const child = children as React.ReactElement<React.HTMLAttributes<HTMLElement>>;
+    const originalOnClick = child.props.onClick;
+    const handleClick = (e: React.MouseEvent<HTMLElement>) => {
+      setIsOpen?.(!isOpen);
+      // Call original onClick if it exists
+      if (originalOnClick) {
+        originalOnClick(e);
+      }
+    };
+    
+    // Clone element without ref to avoid refs during render
     return React.cloneElement(child, {
-      onClick: (e: React.MouseEvent) => {
-        setIsOpen?.(!isOpen);
-        // Call original onClick if it exists
-        if (child.props.onClick) {
-          child.props.onClick(e);
-        }
-      },
+      ...child.props,
+      onClick: handleClick,
       "aria-expanded": isOpen,
       "aria-haspopup": "true",
-      ref,
-    } as any);
+    } as Partial<React.HTMLAttributes<HTMLElement>>);
   }
 
   return (

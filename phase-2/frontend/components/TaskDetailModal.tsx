@@ -39,8 +39,11 @@ export function TaskDetailModal({
   // Reset edit state when task changes or modal closes
   useEffect(() => {
     if (!isOpen || !task) {
-      setIsEditing(false);
-      setEditedData({});
+      // Use setTimeout to avoid setState in effect
+      setTimeout(() => {
+        setIsEditing(false);
+        setEditedData({});
+      }, 0);
     }
   }, [isOpen, task]);
 

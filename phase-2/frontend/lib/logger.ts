@@ -86,7 +86,7 @@ class Logger {
   private createLogEntry(
     level: LogLevel,
     message: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
     error?: Error
   ): LogEntry {
     return {
@@ -137,25 +137,25 @@ class Logger {
   }
 
   // Debug log
-  debug(message: string, context?: Record<string, any>): void {
+  debug(message: string, context?: Record<string, unknown>): void {
     const entry = this.createLogEntry(LogLevel.DEBUG, message, context);
     this.addLog(entry);
   }
 
   // Info log
-  info(message: string, context?: Record<string, any>): void {
+  info(message: string, context?: Record<string, unknown>): void {
     const entry = this.createLogEntry(LogLevel.INFO, message, context);
     this.addLog(entry);
   }
 
   // Warning log
-  warn(message: string, context?: Record<string, any>): void {
+  warn(message: string, context?: Record<string, unknown>): void {
     const entry = this.createLogEntry(LogLevel.WARN, message, context);
     this.addLog(entry);
   }
 
   // Error log
-  error(message: string, context?: Record<string, any>, error?: Error): void {
+  error(message: string, context?: Record<string, unknown>, error?: Error): void {
     const entry = this.createLogEntry(LogLevel.ERROR, message, context, error);
     this.addLog(entry);
 
@@ -211,8 +211,12 @@ class Logger {
     // TODO: Send to analytics service
     // Examples: Google Analytics, Mixpanel, Amplitude, etc.
     //
-    // if (typeof window !== "undefined" && (window as any).gtag) {
-    //   (window as any).gtag("event", action, {
+    // interface WindowWithGtag extends Window {
+    //   gtag?: (command: string, action: string, params?: Record<string, unknown>) => void;
+    // }
+    // const windowWithGtag = window as unknown as WindowWithGtag;
+    // if (typeof window !== "undefined" && windowWithGtag.gtag) {
+    //   windowWithGtag.gtag("event", action, {
     //     event_category: category,
     //     event_label: label,
     //     value: value,
@@ -225,8 +229,12 @@ class Logger {
     this.info("Page view", { path, title });
 
     // TODO: Send to analytics service
-    // if (typeof window !== "undefined" && (window as any).gtag) {
-    //   (window as any).gtag("event", "page_view", {
+    // interface WindowWithGtag extends Window {
+    //   gtag?: (command: string, action: string, params?: Record<string, unknown>) => void;
+    // }
+    // const windowWithGtag = window as unknown as WindowWithGtag;
+    // if (typeof window !== "undefined" && windowWithGtag.gtag) {
+    //   windowWithGtag.gtag("event", "page_view", {
     //     page_path: path,
     //     page_title: title,
     //   });
@@ -275,18 +283,18 @@ class Logger {
 export const logger = new Logger();
 
 // Convenience functions
-export const logDebug = (message: string, context?: Record<string, any>) =>
+export const logDebug = (message: string, context?: Record<string, unknown>) =>
   logger.debug(message, context);
 
-export const logInfo = (message: string, context?: Record<string, any>) =>
+export const logInfo = (message: string, context?: Record<string, unknown>) =>
   logger.info(message, context);
 
-export const logWarn = (message: string, context?: Record<string, any>) =>
+export const logWarn = (message: string, context?: Record<string, unknown>) =>
   logger.warn(message, context);
 
 export const logError = (
   message: string,
-  context?: Record<string, any>,
+  context?: Record<string, unknown>,
   error?: Error
 ) => logger.error(message, context, error);
 

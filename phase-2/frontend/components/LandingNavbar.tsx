@@ -12,9 +12,18 @@ import DarkModeToggle from './DarkModeToggle';
 export function LandingNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email: string; name?: string } | null>(null);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  const checkAuth = async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+    } catch {
+      setUser(null);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -27,15 +36,6 @@ export function LandingNavbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const checkAuth = async () => {
-    try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
-    }
-  };
 
   const handleSignOut = async () => {
     try {

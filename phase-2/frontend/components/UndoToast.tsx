@@ -28,16 +28,22 @@ export default function UndoToast({
   const [isVisible, setIsVisible] = useState(() => !!command);
 
   useEffect(() => {
-    if (command && !isVisible) {
-      setIsVisible(true);
+    if (command) {
+      // Use setTimeout to avoid setState in effect
+      const showTimeout = setTimeout(() => {
+        setIsVisible(true);
+      }, 0);
 
       // Auto-dismiss after 5 seconds
-      const timeout = setTimeout(() => {
+      const dismissTimeout = setTimeout(() => {
         setIsVisible(false);
         setTimeout(onDismiss, 300); // Wait for animation
       }, 5000);
 
-      return () => clearTimeout(timeout);
+      return () => {
+        clearTimeout(showTimeout);
+        clearTimeout(dismissTimeout);
+      };
     } else {
       setIsVisible(false);
     }
