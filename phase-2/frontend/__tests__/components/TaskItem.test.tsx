@@ -3,8 +3,6 @@
  * Tests task item rendering
  */
 
-import { render } from '@testing-library/react';
-
 describe('TaskItem Component', () => {
   it('should render without crashing', () => {
     // Basic smoke test

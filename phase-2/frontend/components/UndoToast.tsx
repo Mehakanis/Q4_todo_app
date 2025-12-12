@@ -45,7 +45,11 @@ export default function UndoToast({
         clearTimeout(dismissTimeout);
       };
     } else {
-      setIsVisible(false);
+      // Use setTimeout to avoid setState in effect
+      const hideTimeout = setTimeout(() => {
+        setIsVisible(false);
+      }, 0);
+      return () => clearTimeout(hideTimeout);
     }
   }, [command, onDismiss]);
 

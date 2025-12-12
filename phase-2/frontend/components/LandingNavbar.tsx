@@ -26,8 +26,13 @@ export function LandingNavbar() {
   };
 
   useEffect(() => {
-    setMounted(true);
+    // Use setTimeout to avoid setState in effect
+    const timeoutId = setTimeout(() => {
+      setMounted(true);
+    }, 0);
     checkAuth();
+    
+    return () => clearTimeout(timeoutId);
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);

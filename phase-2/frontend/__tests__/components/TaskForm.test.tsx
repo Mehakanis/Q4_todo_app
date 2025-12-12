@@ -3,8 +3,6 @@
  * Tests task form rendering and basic interactions
  */
 
-import { render, screen } from '@testing-library/react';
-
 describe('TaskForm Component', () => {
   it('should render without crashing', () => {
     // Basic smoke test

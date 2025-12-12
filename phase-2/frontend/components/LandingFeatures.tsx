@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
-  CheckCircle2,
   Lock,
   ListTodo,
   WifiOff,
@@ -16,7 +15,6 @@ import {
   Bell,
   Tags,
   Calendar,
-  Users,
   Sparkles,
 } from 'lucide-react';
 
