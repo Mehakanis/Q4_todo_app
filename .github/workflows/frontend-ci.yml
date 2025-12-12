@@ -242,15 +242,18 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
+        working-directory: phase-2/frontend
         run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: build-artifacts
           path: phase-2/frontend/.next
 
       - name: Run Playwright E2E tests
+        working-directory: phase-2/frontend
         run: pnpm run test:e2e --project=${{ matrix.browser }}
         env:
           PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
@@ -301,11 +304,13 @@ jobs:
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: build-artifacts
           path: phase-2/frontend/.next
 
       - name: Start application
+        working-directory: phase-2/frontend
         run: |
           pnpm run start &
           sleep 10
@@ -313,12 +318,13 @@ jobs:
           PORT: 3000
 
       - name: Run axe accessibility tests
+        working-directory: phase-2/frontend
         run: |
           npx @axe-core/cli http://localhost:3000 --exit
 
       - name: Stop application
         if: always()
-        run: pkill -f "next start"
+        run: pkill -f "next start" || true
 
   lighthouse:
     name: Lighthouse Performance
@@ -358,11 +364,13 @@ jobs:
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: build-artifacts
           path: phase-2/frontend/.next
 
       - name: Start application
+        working-directory: phase-2/frontend
         run: |
           pnpm run start &
           sleep 10
@@ -380,7 +388,7 @@ jobs:
 
       - name: Stop application
         if: always()
-        run: pkill -f "next start"
+        run: pkill -f "next start" || true
 
   security:
     name: Security Audit
@@ -454,6 +462,7 @@ jobs:
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: build-artifacts
           path: phase-2/frontend/.next
@@ -522,6 +531,7 @@ jobs:
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: build-artifacts
           path: phase-2/frontend/.next
