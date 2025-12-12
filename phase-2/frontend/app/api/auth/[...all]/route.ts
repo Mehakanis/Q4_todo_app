@@ -38,13 +38,41 @@ async function getHandlers() {
  * based on the URL path and HTTP method.
  */
 export async function GET(req: Request) {
-  const { GET } = await getHandlers();
-  return GET(req);
+  try {
+    const handlers = await getHandlers();
+    return handlers.GET(req);
+  } catch (error) {
+    console.error("Better Auth GET handler error:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 }
 
 export async function POST(req: Request) {
-  const { POST } = await getHandlers();
-  return POST(req);
+  try {
+    const handlers = await getHandlers();
+    return handlers.POST(req);
+  } catch (error) {
+    console.error("Better Auth POST handler error:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
 }
 
 /**

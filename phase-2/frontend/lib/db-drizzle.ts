@@ -7,28 +7,57 @@
  * - Connection pooling for better performance
  * - Type-safe database operations
  * - Integrated with Better Auth schema
+ * - Lazy initialization to avoid build-time errors
  */
 
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "@/drizzle/schema";
+import type { NeonHttpDatabase } from "drizzle-orm/neon-http";
 
-// Validate DATABASE_URL at module load time
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is required");
+let dbInstance: NeonHttpDatabase<typeof schema> | null = null;
+
+/**
+ * Get or create Drizzle database instance
+ * Lazy initialization to avoid build-time errors
+ */
+function getDb() {
+  if (dbInstance) {
+    return dbInstance;
+  }
+
+  // Validate DATABASE_URL at runtime (not during build)
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL environment variable is required");
+  }
+
+  /**
+   * Create Neon SQL client
+   * This uses HTTP connection for serverless environments
+   */
+  const sql = neon(databaseUrl);
+
+  /**
+   * Drizzle database instance
+   * Includes Better Auth schema for type-safe queries
+   */
+  dbInstance = drizzle(sql, { schema });
+
+  return dbInstance;
 }
 
 /**
- * Create Neon SQL client
- * This uses HTTP connection for serverless environments
+ * Export database instance (lazy initialization)
+ * This will only initialize when actually used at runtime
  */
-const sql = neon(process.env.DATABASE_URL);
-
-/**
- * Drizzle database instance
- * Includes Better Auth schema for type-safe queries
- */
-export const db = drizzle(sql, { schema });
+export const db = new Proxy({} as NeonHttpDatabase<typeof schema>, {
+  get(_target, prop) {
+    const dbInstance = getDb();
+    const value = (dbInstance as Record<string, unknown>)[prop as string];
+    return typeof value === "function" ? value.bind(dbInstance) : value;
+  },
+});
 
 /**
  * Type export for database instance
