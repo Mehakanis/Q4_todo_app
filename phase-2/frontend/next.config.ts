@@ -23,6 +23,15 @@ const nextConfig: NextConfig = {
   },
   // Turbopack config (empty - using webpack for PWA compatibility)
   turbopack: {},
+  // Rewrites for JWKS endpoint
+  async rewrites() {
+    return [
+      {
+        source: "/.well-known/jwks.json",
+        destination: "/api/jwks",
+      },
+    ];
+  },
 };
 
 // PWA configuration - only enabled in production
