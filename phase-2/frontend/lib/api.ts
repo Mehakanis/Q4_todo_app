@@ -21,41 +21,12 @@ import {
   ImportResult,
   ExportFormat,
 } from "@/types";
-import { authClient } from "@/lib/auth";
+import { getToken } from "@/lib/auth";
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // ms
-
-/**
- * Get JWT token from Better Auth session
- *
- * Priority:
- * 1. Better Auth JWT token (primary)
- * 2. SessionStorage token (fallback for backwards compatibility)
- */
-async function getAuthToken(): Promise<string | null> {
-  // Try Better Auth session first
-  try {
-    const { data: tokenData } = await authClient.token();
-    if (tokenData?.token) {
-      return tokenData.token;
-    }
-  } catch (error) {
-    console.warn("Better Auth token not available:", error);
-  }
-
-  // Fallback to sessionStorage for backwards compatibility
-  if (typeof window !== "undefined") {
-    const token = sessionStorage.getItem("auth_token");
-    if (token) {
-      return token;
-    }
-  }
-
-  return null;
-}
 
 /**
  * Delay utility for retry logic
@@ -69,8 +40,13 @@ const handleApiError = (error: unknown, statusCode?: number): never => {
   // Redirect to login on 401 Unauthorized
   if (statusCode === 401) {
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("auth_token");
-      window.location.href = "/signin";
+      // Only redirect if not already on auth pages
+      const currentPath = window.location.pathname;
+      if (currentPath !== "/signin" && currentPath !== "/signup") {
+        // Clear user data if stored
+        sessionStorage.removeItem("user");
+        window.location.href = "/signin";
+      }
     }
   }
 
@@ -86,13 +62,29 @@ const handleApiError = (error: unknown, statusCode?: number): never => {
 
 /**
  * Generic fetch wrapper with retry logic and error handling
+ * 
+ * @param endpoint - API endpoint (without base URL)
+ * @param options - Fetch options
+ * @param token - JWT token (required for authenticated requests)
+ * @param retries - Number of retries for network errors
  */
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
+  token: string | null = null,
   retries = MAX_RETRIES
 ): Promise<ApiResponse<T>> {
-  const token = await getAuthToken();
+  // Get token if not provided
+  let authToken = token;
+  if (!authToken) {
+    try {
+      const { data: tokenData } = await getToken();
+      authToken = tokenData?.token || null;
+    } catch (error) {
+      console.debug("Failed to get token:", error);
+      authToken = null;
+    }
+  }
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -100,8 +92,8 @@ async function apiFetch<T>(
   };
 
   // Attach JWT token if available
-  if (token) {
-    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+  if (authToken) {
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${authToken}`;
   }
 
   const url = `${API_BASE_URL}${endpoint}`;
@@ -128,6 +120,15 @@ async function apiFetch<T>(
 
     // Handle errors
     if (!response.ok) {
+      // Don't redirect on 401 if we're already being redirected
+      // This prevents redirect loops
+      if (response.status === 401 && typeof window !== "undefined") {
+        const currentPath = window.location.pathname;
+        if (currentPath === "/signin" || currentPath === "/signup") {
+          // Already on auth page, don't redirect
+          return data;
+        }
+      }
       handleApiError(data.error || data, response.status);
     }
 
@@ -136,7 +137,7 @@ async function apiFetch<T>(
     // Retry on network errors
     if (retries > 0 && error instanceof Error && error.name === "TypeError") {
       await delay(RETRY_DELAY);
-      return apiFetch<T>(endpoint, options, retries - 1);
+      return apiFetch<T>(endpoint, options, authToken, retries - 1);
     }
 
     // Re-throw other errors
@@ -151,48 +152,28 @@ export class ApiClient {
   // ==================== Authentication Methods ====================
 
   async signup(userData: UserSignupData): Promise<ApiResponse<AuthResponse>> {
-    const response = await apiFetch<AuthResponse>("/api/auth/signup", {
+    // Signup doesn't require token
+    return apiFetch<AuthResponse>("/api/auth/signup", {
       method: "POST",
       body: JSON.stringify(userData),
-    });
-
-    // Store token if signup successful
-    if (response.success && response.data?.token) {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("auth_token", response.data.token);
-      }
-    }
-
-    return response;
+    }, null);
   }
 
   async signin(credentials: UserCredentials): Promise<ApiResponse<AuthResponse>> {
-    const response = await apiFetch<AuthResponse>("/api/auth/signin", {
+    // Signin doesn't require token
+    return apiFetch<AuthResponse>("/api/auth/signin", {
       method: "POST",
       body: JSON.stringify(credentials),
-    });
-
-    // Store token if signin successful
-    if (response.success && response.data?.token) {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("auth_token", response.data.token);
-      }
-    }
-
-    return response;
+    }, null);
   }
 
   async signout(): Promise<ApiResponse<void>> {
-    const response = await apiFetch<void>("/api/auth/signout", {
-      method: "POST",
-    });
-
-    // Remove token on signout
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("auth_token");
-    }
-
-    return response;
+    const { data: tokenData } = await getToken();
+    return apiFetch<void>(
+      "/api/auth/signout",
+      { method: "POST" },
+      tokenData?.token || null
+    );
   }
 
   // ==================== Task Management Methods ====================
@@ -201,6 +182,16 @@ export class ApiClient {
     userId: string,
     queryParams?: TaskQueryParams
   ): Promise<ApiResponse<PaginatedResponse<Task>>> {
+    // Get token first (same pattern as phase-2-web)
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+
     const params = new URLSearchParams();
 
     if (queryParams?.status) params.append("status", queryParams.status);
@@ -212,21 +203,43 @@ export class ApiClient {
     const queryString = params.toString();
     const endpoint = `/api/${userId}/tasks${queryString ? `?${queryString}` : ""}`;
 
-    return apiFetch<PaginatedResponse<Task>>(endpoint);
+    return apiFetch<PaginatedResponse<Task>>(endpoint, {}, tokenData.token);
   }
 
   async createTask(
     userId: string,
     taskData: TaskFormData
   ): Promise<ApiResponse<Task>> {
-    return apiFetch<Task>(`/api/${userId}/tasks`, {
-      method: "POST",
-      body: JSON.stringify(taskData),
-    });
+    // Get token first
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+
+    return apiFetch<Task>(
+      `/api/${userId}/tasks`,
+      {
+        method: "POST",
+        body: JSON.stringify(taskData),
+      },
+      tokenData.token
+    );
   }
 
   async getTaskById(userId: string, taskId: number): Promise<ApiResponse<Task>> {
-    return apiFetch<Task>(`/api/${userId}/tasks/${taskId}`);
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch<Task>(`/api/${userId}/tasks/${taskId}`, {}, tokenData.token);
   }
 
   async updateTask(
@@ -234,16 +247,34 @@ export class ApiClient {
     taskId: number,
     taskData: Partial<TaskFormData>
   ): Promise<ApiResponse<Task>> {
-    return apiFetch<Task>(`/api/${userId}/tasks/${taskId}`, {
-      method: "PUT",
-      body: JSON.stringify(taskData),
-    });
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch<Task>(
+      `/api/${userId}/tasks/${taskId}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(taskData),
+      },
+      tokenData.token
+    );
   }
 
   async deleteTask(userId: string, taskId: number): Promise<ApiResponse<void>> {
-    return apiFetch<void>(`/api/${userId}/tasks/${taskId}`, {
-      method: "DELETE",
-    });
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch<void>(`/api/${userId}/tasks/${taskId}`, { method: "DELETE" }, tokenData.token);
   }
 
   async toggleTaskComplete(
@@ -251,35 +282,61 @@ export class ApiClient {
     taskId: number,
     completed: boolean
   ): Promise<ApiResponse<Task>> {
-    return apiFetch<Task>(`/api/${userId}/tasks/${taskId}/complete`, {
-      method: "PATCH",
-      body: JSON.stringify({ completed }),
-    });
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch<Task>(
+      `/api/${userId}/tasks/${taskId}/complete`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ completed }),
+      },
+      tokenData.token
+    );
   }
 
   async reorderTasks(
     userId: string,
     taskIds: number[]
   ): Promise<ApiResponse<{ reordered: number }>> {
-    return apiFetch<{ reordered: number }>(`/api/${userId}/tasks/reorder`, {
-      method: "POST",
-      body: JSON.stringify({ task_ids: taskIds }),
-    });
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch<{ reordered: number }>(
+      `/api/${userId}/tasks/reorder`,
+      {
+        method: "POST",
+        body: JSON.stringify(taskIds),
+      },
+      tokenData.token
+    );
   }
 
   // ==================== Export/Import Methods ====================
 
   async exportTasks(userId: string, format: ExportFormat): Promise<Blob> {
-    const token = await getAuthToken();
-    const headers: HeadersInit = {};
-
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      throw new Error("Authentication required");
     }
 
     const response = await fetch(
       `${API_BASE_URL}/api/${userId}/tasks/export?format=${format}`,
-      { headers }
+      {
+        headers: {
+          "Authorization": `Bearer ${tokenData.token}`
+        }
+      }
     );
 
     if (!response.ok) {
@@ -293,18 +350,23 @@ export class ApiClient {
     userId: string,
     file: File
   ): Promise<ApiResponse<ImportResult>> {
-    const token = await getAuthToken();
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+
     const formData = new FormData();
     formData.append("file", file);
 
-    const headers: HeadersInit = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     const response = await fetch(`${API_BASE_URL}/api/${userId}/tasks/import`, {
       method: "POST",
-      headers,
+      headers: {
+        "Authorization": `Bearer ${tokenData.token}`
+      },
       body: formData,
     });
 
@@ -317,13 +379,25 @@ export class ApiClient {
     userId: string,
     taskIds: number[]
   ): Promise<ApiResponse<{ deleted: number }>> {
-    return apiFetch<{ deleted: number }>(`/api/${userId}/tasks/bulk`, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "delete",
-        task_ids: taskIds,
-      }),
-    });
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch<{ deleted: number }>(
+      `/api/${userId}/tasks/bulk`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          action: "delete",
+          task_ids: taskIds,
+        }),
+      },
+      tokenData.token
+    );
   }
 
   async bulkUpdateTaskStatus(
@@ -331,14 +405,26 @@ export class ApiClient {
     taskIds: number[],
     completed: boolean
   ): Promise<ApiResponse<{ updated: number }>> {
-    return apiFetch<{ updated: number }>(`/api/${userId}/tasks/bulk`, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "update_status",
-        task_ids: taskIds,
-        completed,
-      }),
-    });
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch<{ updated: number }>(
+      `/api/${userId}/tasks/bulk`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          action: "update_status",
+          task_ids: taskIds,
+          completed,
+        }),
+      },
+      tokenData.token
+    );
   }
 
   async bulkUpdateTaskPriority(
@@ -346,14 +432,26 @@ export class ApiClient {
     taskIds: number[],
     priority: TaskPriority
   ): Promise<ApiResponse<{ updated: number }>> {
-    return apiFetch<{ updated: number }>(`/api/${userId}/tasks/bulk`, {
-      method: "POST",
-      body: JSON.stringify({
-        action: "update_priority",
-        task_ids: taskIds,
-        priority,
-      }),
-    });
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch<{ updated: number }>(
+      `/api/${userId}/tasks/bulk`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          action: "update_priority",
+          task_ids: taskIds,
+          priority,
+        }),
+      },
+      tokenData.token
+    );
   }
 
   // ==================== Statistics Methods ====================
@@ -371,7 +469,15 @@ export class ApiClient {
       high: number;
     };
   }>> {
-    return apiFetch(`/api/${userId}/tasks/statistics`);
+    const { data: tokenData, error: tokenError } = await getToken();
+    if (tokenError || !tokenData?.token) {
+      return {
+        success: false,
+        message: "Authentication required",
+        error: { code: "UNAUTHORIZED", message: "Please sign in to continue" }
+      };
+    }
+    return apiFetch(`/api/${userId}/tasks/statistics`, {}, tokenData.token);
   }
 }
 

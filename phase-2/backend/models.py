@@ -6,7 +6,7 @@ This module defines the database schema for Users and Tasks.
 
 from datetime import datetime
 from typing import Optional
-from uuid import UUID, uuid4
+# Removed UUID import - Better Auth uses string IDs
 
 from sqlmodel import Column, Field, JSON, SQLModel
 
@@ -26,7 +26,7 @@ class User(SQLModel, table=True):
 
     __tablename__ = "users"
 
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    id: str = Field(primary_key=True)  
     email: str = Field(max_length=255, unique=True, index=True, nullable=False)
     password_hash: str = Field(nullable=False)
     name: str = Field(max_length=100, nullable=False)
@@ -56,7 +56,7 @@ class Task(SQLModel, table=True):
     __tablename__ = "tasks"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: UUID = Field(foreign_key="users.id", nullable=False, index=True)
+    user_id: str = Field(nullable=False, index=True)  # Better Auth user ID (no FK since Better Auth manages users)
     title: str = Field(max_length=200, nullable=False)
     description: Optional[str] = Field(default=None, max_length=1000)
     priority: str = Field(default="medium", nullable=False, index=True)

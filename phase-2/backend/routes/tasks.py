@@ -6,10 +6,11 @@ This module provides endpoints for task CRUD operations with user isolation.
 
 from datetime import datetime
 from typing import Dict, List, Any
-from uuid import UUID
+from enum import Enum
+# Removed UUID import - Better Auth uses string IDs
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status, Body
+from fastapi.responses import Response, JSONResponse
 from sqlmodel import Session
 
 from db import get_session
@@ -27,6 +28,23 @@ from services.export_import_service import ExportImportService
 from services.task_service import TaskService
 
 router = APIRouter(prefix="/api", tags=["tasks"])
+
+
+class ExportFormat(str, Enum):
+    """Export format options."""
+    CSV = "csv"
+    JSON = "json"
+    PDF = "pdf"
+
+    @classmethod
+    def _missing_(cls, value):
+        """Handle case-insensitive matching."""
+        if isinstance(value, str):
+            value_lower = value.lower()
+            for member in cls:
+                if member.value.lower() == value_lower:
+                    return member
+        return None
 
 
 def verify_user_access(user_id: str, current_user: Dict[str, str]) -> None:
@@ -86,8 +104,8 @@ async def create_task(
 
     try:
         # Create task with user isolation
-        user_uuid = UUID(current_user["user_id"])
-        task = TaskService.create_task(db, user_uuid, task_data)
+        user_id_str = current_user["user_id"]
+        task = TaskService.create_task(db, user_id_str, task_data)
 
         # Convert to response model
         task_response = TaskResponse.model_validate(task)
@@ -105,7 +123,6 @@ async def create_task(
 
 @router.get(
     "/{user_id}/tasks",
-    response_model=TaskListResponse,
     summary="Get all tasks with filtering, sorting, search, and pagination",
     description="Get tasks for the authenticated user with comprehensive query parameters support",
 )
@@ -114,7 +131,7 @@ async def get_tasks(
     query_params: TaskQueryParams = Depends(),
     current_user: Dict[str, str] = Depends(verify_jwt_token),
     db: Session = Depends(get_session),
-) -> TaskListResponse:
+):
     """
     Get tasks for the authenticated user with filtering, sorting, search, and pagination.
 
@@ -148,16 +165,33 @@ async def get_tasks(
 
     try:
         # Get tasks with filtering, sorting, search, and pagination
-        user_uuid = UUID(current_user["user_id"])
-        tasks, metadata = TaskService.get_tasks(db, user_uuid, query_params)
+        user_id_str = current_user["user_id"]
+        tasks, metadata = TaskService.get_tasks(db, user_id_str, query_params)
 
         # Convert to response models
         task_responses = [TaskResponse.model_validate(task) for task in tasks]
         pagination_meta = PaginationMeta(**metadata)
 
-        return TaskListResponse(success=True, data=task_responses, meta=pagination_meta)
+        # Return in format expected by frontend: { success: true, data: { items: [...], total, page, limit, totalPages } }
+        return JSONResponse(
+            content={
+                "success": True,
+                "data": {
+                    "items": [task.model_dump(mode='json') for task in task_responses],
+                    "total": pagination_meta.total,
+                    "page": pagination_meta.page,
+                    "limit": pagination_meta.limit,
+                    "totalPages": pagination_meta.totalPages,
+                }
+            }
+        )
 
     except ValueError as e:
+        # Log the error for debugging
+        import logging
+        logger = logging.getLogger("todo_api")
+        logger.error(f"Validation error in get_tasks: {str(e)}", exc_info=True)
+        
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
@@ -165,6 +199,103 @@ async def get_tasks(
                 "error": {"code": "VALIDATION_ERROR", "message": str(e)},
             },
         )
+    except Exception as e:
+        # Catch any other unexpected errors
+        import logging
+        logger = logging.getLogger("todo_api")
+        logger.error(f"Unexpected error in get_tasks: {str(e)}", exc_info=True)
+        
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error": {"code": "INTERNAL_ERROR", "message": "An unexpected error occurred"},
+            },
+        )
+
+
+# IMPORTANT: Specific routes like /export must come BEFORE generic parameter routes like /{task_id}
+# to ensure proper route matching in FastAPI
+@router.get(
+    "/{user_id}/tasks/export",
+    summary="Export tasks",
+    description="Export user's tasks to CSV, JSON, or PDF format with user isolation enforcement",
+)
+async def export_tasks(
+    user_id: str,
+    format_param: str = Query(
+        ...,
+        alias="format",
+        pattern="^(csv|json|pdf)$",
+        description="Export format: csv, json, or pdf"
+    ),
+    current_user: Dict[str, str] = Depends(verify_jwt_token),
+    db: Session = Depends(get_session),
+) -> Response:
+    """
+    Export all tasks for authenticated user to CSV, JSON, or PDF file.
+
+    Args:
+        user_id: User ID from URL path
+        format_param: Export format (csv, json, or pdf)
+        current_user: User information from JWT token
+        db: Database session
+
+    Returns:
+        Response: File download with exported tasks in the specified format
+
+    Raises:
+        HTTPException: 401 if not authenticated, 403 if user_id mismatch, 400 if invalid format
+    """
+    # Verify user_id matches JWT token
+    verify_user_access(user_id, current_user)
+
+    # Get all tasks for user
+    user_id_str = current_user["user_id"]
+    tasks, _ = TaskService.get_tasks(db, user_id_str, query_params=None)
+
+    # Generate timestamp for filename
+    timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+
+    # Export based on format
+    format_lower = format_param.lower()
+
+    if format_lower == "csv":
+        file_content_str = ExportImportService.export_tasks_csv(tasks)
+        content_type = "text/csv"
+        filename = f"tasks_export_{timestamp}.csv"
+        file_content = file_content_str.encode("utf-8")
+
+    elif format_lower == "json":
+        file_content_str = ExportImportService.export_tasks_json(tasks)
+        content_type = "application/json"
+        filename = f"tasks_export_{timestamp}.json"
+        file_content = file_content_str.encode("utf-8")
+
+    elif format_lower == "pdf":
+        # PDF export returns bytes directly
+        file_content = ExportImportService.export_tasks_pdf(tasks)
+        content_type = "application/pdf"
+        filename = f"tasks_export_{timestamp}.pdf"
+
+    else:
+        # This should not happen due to regex validation, but handle it anyway
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid export format. Supported formats: csv, json, pdf"
+                },
+            },
+        )
+
+    return Response(
+        content=file_content,
+        media_type=content_type,
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @router.get(
@@ -198,8 +329,8 @@ async def get_task(
     verify_user_access(user_id, current_user)
 
     # Get task with user isolation verification
-    user_uuid = UUID(current_user["user_id"])
-    task = TaskService.get_task_by_id(db, user_uuid, task_id)
+    user_id_str = current_user["user_id"]
+    task = TaskService.get_task_by_id(db, user_id_str, task_id)
 
     # Convert to response model
     task_response = TaskResponse.model_validate(task)
@@ -240,8 +371,8 @@ async def update_task(
 
     try:
         # Update task with user isolation verification
-        user_uuid = UUID(current_user["user_id"])
-        task = TaskService.update_task(db, user_uuid, task_id, task_data)
+        user_id_str = current_user["user_id"]
+        task = TaskService.update_task(db, user_id_str, task_id, task_data)
 
         # Convert to response model
         task_response = TaskResponse.model_validate(task)
@@ -289,8 +420,8 @@ async def delete_task(
     verify_user_access(user_id, current_user)
 
     # Delete task with user isolation verification
-    user_uuid = UUID(current_user["user_id"])
-    TaskService.delete_task(db, user_uuid, task_id)
+    user_id_str = current_user["user_id"]
+    TaskService.delete_task(db, user_id_str, task_id)
 
     return DeleteTaskResponse(success=True, message="Task deleted successfully")
 
@@ -328,8 +459,8 @@ async def toggle_complete(
     verify_user_access(user_id, current_user)
 
     # Toggle completion with user isolation verification
-    user_uuid = UUID(current_user["user_id"])
-    task = TaskService.toggle_complete(db, user_uuid, task_id, complete_data.completed)
+    user_id_str = current_user["user_id"]
+    task = TaskService.toggle_complete(db, user_id_str, task_id, complete_data.completed)
 
     # Convert to response model
     task_response = TaskResponse.model_validate(task)
@@ -341,28 +472,32 @@ async def toggle_complete(
 # ============================================================================
 
 
-@router.get(
-    "/{user_id}/tasks/export",
-    summary="Export tasks",
-    description="Export user's tasks to CSV or JSON format with user isolation enforcement",
+@router.post(
+    "/{user_id}/tasks/reorder",
+    summary="Reorder tasks",
+    description="Update the order of tasks for authenticated user",
 )
-async def export_tasks(
+async def reorder_tasks(
     user_id: str,
-    format: str = Query(..., regex="^(csv|json)$", description="Export format: csv or json"),
+    task_ids: List[int] = Body(...),
     current_user: Dict[str, str] = Depends(verify_jwt_token),
     db: Session = Depends(get_session),
-) -> Response:
+) -> Dict[str, Any]:
     """
-    Export all tasks for authenticated user to CSV or JSON file.
+    Reorder tasks for authenticated user.
+
+    Note: In the current implementation, tasks don't have an explicit order field,
+    but this endpoint is provided for compatibility with drag-and-drop UI.
+    The order is typically maintained by the frontend using the task IDs.
 
     Args:
         user_id: User ID from URL path
-        format: Export format (csv or json)
+        task_ids: List of task IDs in the desired order
         current_user: User information from JWT token
         db: Database session
 
     Returns:
-        Response: File download with exported tasks
+        Dict: Result with count of reordered tasks
 
     Raises:
         HTTPException: 401 if not authenticated, 403 if user_id mismatch
@@ -370,25 +505,26 @@ async def export_tasks(
     # Verify user_id matches JWT token
     verify_user_access(user_id, current_user)
 
-    # Get all tasks for user
-    user_uuid = UUID(current_user["user_id"])
-    tasks, _ = TaskService.get_tasks(db, user_uuid, query_params=None)
+    user_id_str = current_user["user_id"]
+    
+    # Verify all tasks belong to the user
+    for task_id in task_ids:
+        task = TaskService.get_task_by_id(db, user_id_str, task_id)
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "success": False,
+                    "error": {"code": "TASK_NOT_FOUND", "message": f"Task {task_id} not found"},
+                },
+            )
 
-    # Export based on format
-    if format == "csv":
-        file_content = ExportImportService.export_tasks_csv(tasks)
-        content_type = "text/csv"
-        filename = f"tasks_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
-    else:  # json
-        file_content = ExportImportService.export_tasks_json(tasks)
-        content_type = "application/json"
-        filename = f"tasks_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
-
-    return Response(
-        content=file_content,
-        media_type=content_type,
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
-    )
+    # In this implementation, we just verify the tasks exist and belong to the user
+    # The frontend maintains the order client-side
+    return {
+        "success": True,
+        "data": {"reordered": len(task_ids)},
+    }
 
 
 @router.post(
@@ -439,11 +575,11 @@ async def import_tasks(
     content_str = content.decode("utf-8")
 
     # Determine format from filename
-    user_uuid = UUID(current_user["user_id"])
+    user_id_str = current_user["user_id"]
     if file.filename.endswith(".csv"):
-        result = ExportImportService.import_tasks_csv(db, user_uuid, content_str)
+        result = ExportImportService.import_tasks_csv(db, user_id_str, content_str)
     else:  # json
-        result = ExportImportService.import_tasks_json(db, user_uuid, content_str)
+        result = ExportImportService.import_tasks_json(db, user_id_str, content_str)
 
     return {
         "success": True,
@@ -483,8 +619,8 @@ async def get_task_statistics(
     verify_user_access(user_id, current_user)
 
     # Get statistics
-    user_uuid = UUID(current_user["user_id"])
-    statistics = TaskService.get_task_statistics(db, user_uuid)
+    user_id_str = current_user["user_id"]
+    statistics = TaskService.get_task_statistics(db, user_id_str)
 
     return {"success": True, "data": statistics}
 
@@ -543,7 +679,7 @@ async def bulk_operations(
         )
 
     # Perform bulk operation
-    user_uuid = UUID(current_user["user_id"])
-    result = TaskService.bulk_operations(db, user_uuid, operation, task_ids)
+    user_id_str = current_user["user_id"]
+    result = TaskService.bulk_operations(db, user_id_str, operation, task_ids)
 
     return {"success": True, "data": result}

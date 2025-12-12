@@ -7,7 +7,8 @@
  * Searches by title and description with debouncing
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { debounce } from "@/lib/utils";
 
@@ -27,12 +28,11 @@ export default function SearchBar({
   const [searchValue, setSearchValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Create debounced search function
-  const debouncedSearch = useRef(
-    debounce((query: string) => {
-      onSearch(query);
-    }, debounceDelay)
-  ).current;
+  // Create debounced search function using useMemo to ensure it's stable
+  const debouncedSearch = useMemo(
+    () => debounce(onSearch, debounceDelay),
+    [onSearch, debounceDelay]
+  );
 
   // Handle search input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,6 +44,9 @@ export default function SearchBar({
   // Handle clear button
   const handleClear = () => {
     setSearchValue("");
+    if (debouncedSearch && 'cancel' in debouncedSearch && typeof debouncedSearch.cancel === 'function') {
+      debouncedSearch.cancel();
+    }
     onSearch("");
     inputRef.current?.focus();
   };
@@ -65,20 +68,7 @@ export default function SearchBar({
     <div className={cn("relative", className)} role="search">
       {/* Search Icon */}
       <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-        <svg
-          className="w-5 h-5 text-gray-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
+        <Search className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
       </div>
 
       {/* Search Input */}
@@ -88,11 +78,11 @@ export default function SearchBar({
         value={searchValue}
         onChange={handleChange}
         className={cn(
-          "w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600",
+          "w-full pl-10 pr-10 py-2 border border-border",
           "rounded-md shadow-sm",
-          "focus:outline-none focus:ring-2 focus:ring-blue-500",
-          "bg-white dark:bg-gray-800 text-gray-900 dark:text-white",
-          "placeholder-gray-500 dark:placeholder-gray-400"
+          "focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary",
+          "bg-background text-foreground",
+          "placeholder:text-muted-foreground"
         )}
         placeholder={placeholder}
         aria-label="Search tasks"
@@ -111,33 +101,20 @@ export default function SearchBar({
             type="button"
             onClick={handleClear}
             className={cn(
-              "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
-              "focus:outline-none focus:ring-2 focus:ring-blue-500 rounded",
+              "text-muted-foreground hover:text-foreground",
+              "focus:outline-none focus:ring-2 focus:ring-primary rounded",
               "transition-colors"
             )}
             aria-label="Clear search"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         ) : (
           <kbd
             className={cn(
               "hidden sm:inline-flex items-center gap-1 px-2 py-1",
-              "text-xs font-semibold text-gray-500 dark:text-gray-400",
-              "bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600",
+              "text-xs font-semibold text-muted-foreground",
+              "bg-muted border border-border",
               "rounded"
             )}
             aria-label="Keyboard shortcut: Control plus K"

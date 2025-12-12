@@ -47,6 +47,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """
     # Startup: Initialize database connection
     print("🚀 Starting up Todo backend...")
+    
+    # Create database tables if they don't exist
+    from db import create_db_and_tables
+    try:
+        create_db_and_tables()
+        print("✅ Database tables initialized")
+    except Exception as e:
+        print(f"⚠️  Database initialization warning: {e}")
+        print("💡 Run 'uv run alembic upgrade head' to apply migrations")
+    
     print("✅ Security middleware enabled")
     print("✅ Rate limiting enabled")
     print("✅ Performance monitoring enabled")

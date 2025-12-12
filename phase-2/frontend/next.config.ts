@@ -25,9 +25,10 @@ const nextConfig: NextConfig = {
   turbopack: {},
 };
 
-const config = withPWA({
+// PWA configuration - only enabled in production
+const pwaConfig = withPWA({
   dest: "public",
-  disable: process.env.NODE_ENV === "development",
+  disable: process.env.NODE_ENV === "development", // Disabled in dev to avoid conflicts
   register: true,
   skipWaiting: true,
   runtimeCaching: [
@@ -157,7 +158,10 @@ const config = withPWA({
       },
     },
   ],
-})(nextConfig);
+});
+
+// Apply PWA config to Next.js config
+const config = pwaConfig(nextConfig);
 
 // Wrap with bundle analyzer
 export default bundleAnalyzer(config);

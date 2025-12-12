@@ -120,5 +120,8 @@ export async function refreshSession() {
   }
 }
 
+// Export token getter function (same pattern as phase-2-web)
+export const getToken = authClient.token;
+
 // Export the auth client as default
 export default authClient;

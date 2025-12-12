@@ -13,49 +13,16 @@ from uuid import UUID, uuid4
 # Set test environment BEFORE importing other modules
 os.environ["ENVIRONMENT"] = "test"
 # Set BETTER_AUTH_SECRET for testing (required for JWT token generation)
-os.environ["BETTER_AUTH_SECRET"] = os.getenv("BETTER_AUTH_SECRET", "test-secret-key-for-jwt-token-generation-in-tests-only")
+os.environ["BETTER_AUTH_SECRET"] = os.getenv(
+    "BETTER_AUTH_SECRET", 
+    "test-secret-key-for-jwt-token-generation-in-tests-only"
+)
 
-# Fix bcrypt 72-byte limit issue during passlib initialization
-# This prevents passlib from trying to detect bugs with very long passwords
+# Suppress bcrypt/passlib warnings in tests
+# (password.py already handles bcrypt initialization properly)
 warnings.filterwarnings("ignore", message=".*password cannot be longer than 72 bytes.*")
 warnings.filterwarnings("ignore", category=UserWarning, module="passlib")
 warnings.filterwarnings("ignore", message=".*bcrypt.*")
-
-# Aggressive monkeypatch bcrypt to skip bug detection BEFORE any imports
-# This must happen before password module is imported
-try:
-    import passlib.handlers.bcrypt as bcrypt_module
-    
-    # Patch at the module level before any backend initialization
-    if hasattr(bcrypt_module, '_BcryptBackend'):
-        backend_class = bcrypt_module._BcryptBackend
-        
-        # Replace detect_wrap_bug method to always return False
-        if hasattr(backend_class, 'detect_wrap_bug'):
-            @classmethod
-            def patched_detect_wrap_bug(cls, ident):
-                return False  # Skip bug detection
-            backend_class.detect_wrap_bug = patched_detect_wrap_bug
-        
-        # Replace _finalize_backend_mixin to skip bug detection
-        if hasattr(backend_class, '_finalize_backend_mixin'):
-            @classmethod
-            def patched_finalize_backend_mixin(cls, name, dryrun):
-                # Skip bug detection entirely - just return the class
-                return cls
-            backend_class._finalize_backend_mixin = patched_finalize_backend_mixin
-        
-        # Also patch _load_backend_mixin to skip bug detection
-        if hasattr(backend_class, '_load_backend_mixin'):
-            original_load = backend_class._load_backend_mixin
-            @classmethod
-            def patched_load_backend_mixin(cls, name, dryrun):
-                # Skip the finalize step which triggers bug detection
-                return original_load(name, dryrun=True)  # Use dryrun to skip bug detection
-            backend_class._load_backend_mixin = patched_load_backend_mixin
-except Exception:
-    # If patching fails, continue anyway
-    pass
 
 import pytest
 from fastapi.testclient import TestClient

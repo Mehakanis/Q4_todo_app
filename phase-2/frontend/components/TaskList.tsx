@@ -6,11 +6,13 @@
  * Displays a list of tasks with filtering, sorting, and loading states
  * Supports different view modes (list, grid, kanban)
  * Includes drag-and-drop reordering functionality
+ * Enhanced with Framer Motion animations
  */
 
 import { Task } from "@/types";
 import { cn } from "@/lib/utils";
 import { memo, useMemo, useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import TaskItem from "./TaskItem";
 import LoadingSpinner from "./LoadingSpinner";
 import {
@@ -212,7 +214,7 @@ const TaskList = memo(function TaskList({
   ]);
 
   const gridItems = useMemo(() => (
-    <div
+    <motion.div
       className={cn(
         "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4",
         className
@@ -220,18 +222,27 @@ const TaskList = memo(function TaskList({
       role="list"
       aria-label="Task grid"
     >
-      {localTasks.map((task) => (
-        <div key={task.id}>
-          <TaskItem
-            task={task}
-            userId={userId}
+      <AnimatePresence mode="popLayout">
+        {localTasks.map((task, index) => (
+          <motion.div
+            key={task.id}
+            layout
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ delay: index * 0.05, duration: 0.3 }}
+          >
+            <TaskItem
+              task={task}
+              userId={userId}
             onSuccess={onTaskChange}
             onError={onError}
             viewMode="card"
           />
-        </div>
-      ))}
-    </div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </motion.div>
   ), [localTasks, userId, onTaskChange, onError, className]);
 
   const kanbanView = useMemo(() => (
@@ -324,16 +335,26 @@ const TaskList = memo(function TaskList({
     );
   }
 
-  // Empty state
-  if (!tasks || tasks.length === 0) {
+  // Empty state - check localTasks instead of tasks prop
+  if (!localTasks || localTasks.length === 0) {
     return (
-      <div
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
         className="text-center py-12 text-gray-500 dark:text-gray-400"
         role="status"
         aria-live="polite"
       >
-        <p className="text-lg">{emptyMessage}</p>
-      </div>
+        <motion.p
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-lg"
+        >
+          {emptyMessage}
+        </motion.p>
+      </motion.div>
     );
   }
 

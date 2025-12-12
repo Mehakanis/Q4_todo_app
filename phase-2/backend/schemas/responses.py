@@ -6,7 +6,7 @@ This module defines Pydantic models for API responses.
 
 from datetime import datetime
 from typing import Any, Dict, Optional
-from uuid import UUID
+# Removed UUID import - Better Auth uses string IDs
 
 from pydantic import BaseModel, Field
 
@@ -23,7 +23,7 @@ class UserResponse(BaseModel):
         updated_at: Last update timestamp
     """
 
-    id: UUID
+    id: str  # Better Auth uses string IDs
     email: str
     name: str
     created_at: datetime
@@ -93,7 +93,7 @@ class TaskResponse(BaseModel):
     """
 
     id: int
-    user_id: UUID
+    user_id: str  # Better Auth uses string IDs
     title: str
     description: Optional[str] = None
     priority: str
@@ -130,13 +130,13 @@ class TaskListResponse(BaseModel):
 
     Attributes:
         success: Operation success status
-        data: List of tasks
-        meta: Pagination metadata (total, page, limit, totalPages)
+        data: Paginated task data with items and pagination info
     """
 
     success: bool = Field(default=True)
-    data: list[TaskResponse]
-    meta: Optional[PaginationMeta] = Field(None, description="Pagination metadata")
+    data: Dict[str, Any] = Field(
+        description="Paginated task data with items, total, page, limit, totalPages"
+    )
 
 
 class SingleTaskResponse(BaseModel):

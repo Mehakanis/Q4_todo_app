@@ -134,7 +134,7 @@ export interface ToastMessage {
 }
 
 // Export/Import Types
-export type ExportFormat = "csv" | "json";
+export type ExportFormat = "csv" | "json" | "pdf";
 
 export interface ImportResult {
   imported: number;

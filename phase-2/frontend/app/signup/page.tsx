@@ -88,16 +88,12 @@ export default function SignupPage() {
         return;
       }
 
-      // Get JWT token from Better Auth
-      const { data: tokenData } = await authClient.token();
-      if (tokenData?.token) {
-        // Store token for API calls (fallback)
-        sessionStorage.setItem("auth_token", tokenData.token);
-
-        // Store user data
-        if (result.data?.user) {
-          sessionStorage.setItem("user", JSON.stringify(result.data.user));
-        }
+      // Session is now established via Better Auth cookies
+      // Token will be fetched fresh on each API call (same pattern as phase-2-web)
+      
+      // Store user data if needed
+      if (result.data?.user) {
+        sessionStorage.setItem("user", JSON.stringify(result.data.user));
       }
 
       // Redirect to dashboard or intended destination

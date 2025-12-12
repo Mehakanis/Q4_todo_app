@@ -26,12 +26,19 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     async function checkAuth() {
       try {
+        // Check auth status
         const authenticated = await isAuthenticated();
 
         if (!authenticated) {
+          // Clear any stale tokens
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("auth_token");
+            sessionStorage.removeItem("user");
+          }
+
           // Store the intended destination for redirect after login
-          const currentPath = window.location.pathname;
-          if (currentPath !== "/signin") {
+          const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+          if (currentPath !== "/signin" && currentPath !== "/signup") {
             sessionStorage.setItem("redirectAfterLogin", currentPath);
           }
 
@@ -41,7 +48,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         }
       } catch (error) {
         console.error("Auth check failed:", error);
-        router.push("/signin");
+        // On error, only redirect if not already on auth pages
+        const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+        if (currentPath !== "/signin" && currentPath !== "/signup") {
+          router.push("/signin");
+        }
       } finally {
         setIsChecking(false);
       }

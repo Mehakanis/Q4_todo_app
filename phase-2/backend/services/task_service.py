@@ -7,7 +7,7 @@ This module provides the TaskService class for handling task-related operations.
 import math
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
+# Removed UUID import - Better Auth uses string IDs
 
 from fastapi import HTTPException, status
 from sqlmodel import Session, func, or_, select
@@ -30,7 +30,7 @@ class TaskService:
     """
 
     @staticmethod
-    def create_task(db: Session, user_id: UUID, task_data: CreateTaskRequest) -> Task:
+    def create_task(db: Session, user_id: str, task_data: CreateTaskRequest) -> Task:
         """
         Create a new task for a user.
 
@@ -64,7 +64,7 @@ class TaskService:
 
     @staticmethod
     def get_tasks(
-        db: Session, user_id: UUID, query_params: Optional[TaskQueryParams] = None
+        db: Session, user_id: str, query_params: Optional[TaskQueryParams] = None
     ) -> tuple[list[Task], dict]:
         """
         Get tasks for a user with filtering, sorting, search, and pagination.
@@ -176,7 +176,7 @@ class TaskService:
         return list(tasks), metadata
 
     @staticmethod
-    def get_task_by_id(db: Session, user_id: UUID, task_id: int) -> Task:
+    def get_task_by_id(db: Session, user_id: str, task_id: int) -> Task:
         """
         Get a specific task by ID.
 
@@ -210,7 +210,7 @@ class TaskService:
         return task
 
     @staticmethod
-    def update_task(db: Session, user_id: UUID, task_id: int, task_data: UpdateTaskRequest) -> Task:
+    def update_task(db: Session, user_id: str, task_id: int, task_data: UpdateTaskRequest) -> Task:
         """
         Update a task's details.
 
@@ -244,7 +244,7 @@ class TaskService:
         return task
 
     @staticmethod
-    def delete_task(db: Session, user_id: UUID, task_id: int) -> None:
+    def delete_task(db: Session, user_id: str, task_id: int) -> None:
         """
         Delete a task.
 
@@ -263,7 +263,7 @@ class TaskService:
         db.commit()
 
     @staticmethod
-    def toggle_complete(db: Session, user_id: UUID, task_id: int, completed: bool) -> Task:
+    def toggle_complete(db: Session, user_id: str, task_id: int, completed: bool) -> Task:
         """
         Toggle task completion status.
 
@@ -292,7 +292,7 @@ class TaskService:
         return task
 
     @staticmethod
-    def get_task_statistics(db: Session, user_id: UUID) -> dict:
+    def get_task_statistics(db: Session, user_id: str) -> dict:
         """
         Get task statistics for a user.
 
@@ -348,7 +348,7 @@ class TaskService:
 
     @staticmethod
     def bulk_operations(
-        db: Session, user_id: UUID, operation: str, task_ids: list[int]
+        db: Session, user_id: str, operation: str, task_ids: list[int]
     ) -> dict:
         """
         Perform bulk operations on tasks.

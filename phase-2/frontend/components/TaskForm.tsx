@@ -6,9 +6,11 @@
  * Form for creating and editing tasks with validation
  * Supports title, description, priority, due date, and tags
  * Integrates with API client for task creation and updates
+ * Enhanced with Framer Motion animations
  */
 
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Task, TaskFormData } from "@/types";
 import { cn, sanitizeInput } from "@/lib/utils";
 import LoadingSpinner from "./LoadingSpinner";
@@ -228,11 +230,20 @@ export default function TaskForm({
           aria-describedby={errors.title ? "title-error" : undefined}
           disabled={isLoading}
         />
-        {errors.title && (
-          <p id="title-error" className="mt-1 text-sm text-red-600" role="alert">
-            {errors.title}
-          </p>
-        )}
+        <AnimatePresence>
+          {errors.title && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              id="title-error"
+              className="mt-1 text-sm text-red-600"
+              role="alert"
+            >
+              {errors.title}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Description Field */}
@@ -261,11 +272,20 @@ export default function TaskForm({
           aria-describedby={errors.description ? "description-error" : undefined}
           disabled={isLoading}
         />
-        {errors.description && (
-          <p id="description-error" className="mt-1 text-sm text-red-600" role="alert">
-            {errors.description}
-          </p>
-        )}
+        <AnimatePresence>
+          {errors.description && (
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              id="description-error"
+              className="mt-1 text-sm text-red-600"
+              role="alert"
+            >
+              {errors.description}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Priority and Due Date Row */}
@@ -403,9 +423,11 @@ export default function TaskForm({
 
       {/* Form Actions */}
       <div className="flex gap-3 pt-2">
-        <button
+        <motion.button
           type="submit"
           disabled={isLoading}
+          whileHover={{ scale: isLoading ? 1 : 1.02 }}
+          whileTap={{ scale: isLoading ? 1 : 0.98 }}
           className={cn(
             "flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md",
             "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
@@ -422,13 +444,15 @@ export default function TaskForm({
           ) : (
             submitLabel
           )}
-        </button>
+        </motion.button>
 
         {onCancel && (
-          <button
+          <motion.button
             type="button"
             onClick={onCancel}
             disabled={isLoading}
+            whileHover={{ scale: isLoading ? 1 : 1.02 }}
+            whileTap={{ scale: isLoading ? 1 : 0.98 }}
             className={cn(
               "px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md",
               "dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300",
@@ -439,7 +463,7 @@ export default function TaskForm({
             aria-label="Cancel"
           >
             Cancel
-          </button>
+          </motion.button>
         )}
       </div>
     </form>

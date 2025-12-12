@@ -9,7 +9,7 @@ from typing import Dict
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import ExpiredSignatureError, JWTError
+import jwt.exceptions
 
 from utils.auth import verify_jwt_token as verify_token
 
@@ -47,11 +47,11 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(securit
     token = credentials.credentials
 
     try:
-        # Verify token and extract user information
+        # Verify token and extract user information (uses JWKS)
         user_info = verify_token(token)
         return user_info
 
-    except ExpiredSignatureError:
+    except jwt.exceptions.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
@@ -61,7 +61,7 @@ def verify_jwt_token(credentials: HTTPAuthorizationCredentials = Depends(securit
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    except JWTError:
+    except jwt.exceptions.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={

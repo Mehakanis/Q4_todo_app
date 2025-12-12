@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ToastProvider } from "@/components/ui/toast";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
@@ -54,15 +55,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-          <OfflineIndicator />
-          <PWAInstallPrompt />
+        <ThemeProvider>
+          <ToastProvider>
+            {children}
+            <OfflineIndicator />
+            <PWAInstallPrompt />
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>

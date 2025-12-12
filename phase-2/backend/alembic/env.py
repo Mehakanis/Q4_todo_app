@@ -1,13 +1,23 @@
 import os
 from logging.config import fileConfig
+from pathlib import Path
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from dotenv import load_dotenv
 
 from alembic import context
 
+# Load environment variables from .env file
+env_path = Path(__file__).parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    # Fallback: try to load from current directory
+    load_dotenv()
+
 # Import SQLModel models (needed for alembic to detect model changes)
-from models import User, Task  # noqa: F401
+from models import Task  # noqa: F401  # User model removed - Better Auth manages users
 from sqlmodel import SQLModel
 
 # this is the Alembic Config object, which provides

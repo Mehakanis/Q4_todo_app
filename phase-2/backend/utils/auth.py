@@ -1,70 +1,84 @@
 """
-JWT authentication utilities for token generation and verification.
+JWT verification for Better Auth tokens.
 
-This module provides functions for generating and verifying JWT tokens
-using the Better Auth shared secret.
+This module provides JWT verification using the JWKS endpoint from Better Auth
+and extracts the user ID from the token's 'sub' claim.
+
+Note: This replaces the previous HS256 shared secret approach with JWKS
+to match Better Auth's JWT plugin token generation.
 """
 
-import os
-from datetime import datetime, timedelta
+import jwt
+from jwt import PyJWKClient
 from typing import Dict
+from functools import lru_cache
+from config import settings
 
-from jose import jwt
-
-# Get shared secret from environment (MUST match frontend Better Auth secret)
-# Allow None for testing, but validate when functions are called
-BETTER_AUTH_SECRET = os.getenv("BETTER_AUTH_SECRET")
-ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
-
-# Only raise error in non-test environments
-if not BETTER_AUTH_SECRET and ENVIRONMENT not in ("test", "testing"):
-    raise ValueError("BETTER_AUTH_SECRET environment variable is required")
-
-# JWT configuration
-JWT_ALGORITHM = "HS256"
-JWT_EXPIRATION_DAYS = int(os.getenv("JWT_EXPIRATION_DAYS", "7"))
-
-
+# Keep generate_jwt_token for backward compatibility (tests may use it)
+# But note: Better Auth generates tokens, not the backend
+# This function is only for testing purposes
 def generate_jwt_token(user_id: str, email: str) -> str:
     """
-    Generate JWT token for authenticated user.
-
+    Generate JWT token for testing purposes only.
+    
+    Note: In production, Better Auth generates tokens. This function
+    is kept for backward compatibility with tests but should not be
+    used in production code.
+    
     Args:
-        user_id: User's unique identifier (UUID as string)
+        user_id: User's unique identifier
         email: User's email address
-
+    
     Returns:
-        str: JWT token string
-
-    Example:
-        >>> token = generate_jwt_token("123e4567-e89b-12d3-a456-426614174000", "user@example.com")
-        >>> print(token[:10])
-        eyJhbGciO
+        str: JWT token string (deprecated - use Better Auth instead)
     """
+    import os
+    from datetime import datetime, timedelta
+    from jose import jwt
+    
+    BETTER_AUTH_SECRET = os.getenv("BETTER_AUTH_SECRET")
     if not BETTER_AUTH_SECRET:
         raise ValueError("BETTER_AUTH_SECRET environment variable is required")
-
-    # Calculate expiration time
-    expiration = datetime.utcnow() + timedelta(days=JWT_EXPIRATION_DAYS)
-
-    # Create payload with standard JWT claims
+    
+    expiration = datetime.utcnow() + timedelta(days=7)
     payload = {
-        "sub": user_id,  # Standard JWT subject claim
-        "user_id": user_id,  # Also include for compatibility
+        "sub": user_id,
+        "user_id": user_id,
         "email": email,
-        "exp": expiration,  # Expiration timestamp
-        "iat": datetime.utcnow(),  # Issued at timestamp
+        "exp": expiration,
+        "iat": datetime.utcnow(),
     }
+    
+    # Note: This uses HS256 for test compatibility, but Better Auth uses EdDSA/RS256
+    return jwt.encode(payload, BETTER_AUTH_SECRET, algorithm="HS256")
 
-    # Encode token with shared secret
-    token = jwt.encode(payload, BETTER_AUTH_SECRET, algorithm=JWT_ALGORITHM)
 
-    return token
+def get_jwk_client() -> PyJWKClient:
+    """
+    Get a cached PyJWKClient for JWKS verification.
+
+    The client fetches public keys from Better Auth's JWKS endpoint
+    and caches them for efficient verification.
+
+    Returns:
+        PyJWKClient: Configured JWKS client
+    """
+    jwks_url = f"{settings.better_auth_url}/api/auth/jwks"
+    return PyJWKClient(jwks_url)
+
+
+@lru_cache(maxsize=1)
+def _get_cached_jwk_client() -> PyJWKClient:
+    """Cached version of JWKS client."""
+    return get_jwk_client()
 
 
 def verify_jwt_token(token: str) -> Dict[str, str]:
     """
-    Verify JWT token and extract user information.
+    Verify JWT token and extract user information using JWKS.
+
+    This function extracts the JWT token, verifies its signature using JWKS,
+    and returns the user information from the 'sub' claim.
 
     Args:
         token: JWT token string to verify
@@ -73,25 +87,48 @@ def verify_jwt_token(token: str) -> Dict[str, str]:
         dict: {"user_id": str, "email": str}
 
     Raises:
-        jose.JWTError: If token is invalid or expired
+        jwt.exceptions.PyJWTError: If token is invalid or expired
+        ValueError: If token is missing user ID
 
     Example:
-        >>> token = generate_jwt_token("123e4567-e89b-12d3-a456-426614174000", "user@example.com")
+        >>> token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
         >>> payload = verify_jwt_token(token)
         >>> print(payload["user_id"])
         123e4567-e89b-12d3-a456-426614174000
     """
-    if not BETTER_AUTH_SECRET:
-        raise ValueError("BETTER_AUTH_SECRET environment variable is required")
+    try:
+        # Get JWKS client and signing key
+        jwk_client = _get_cached_jwk_client()
+        signing_key = jwk_client.get_signing_key_from_jwt(token)
 
-    # Decode and verify token
-    payload = jwt.decode(token, BETTER_AUTH_SECRET, algorithms=[JWT_ALGORITHM])
+        # Verify and decode the JWT
+        # Better Auth uses EdDSA (Ed25519) or RS256 by default
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["EdDSA", "RS256"],
+            options={"verify_aud": False}  # Better Auth doesn't use audience claim
+        )
 
-    # Extract user information
-    user_id: str = payload.get("sub") or payload.get("user_id")
-    email: str = payload.get("email")
+        # Extract user information from token
+        user_id: str = payload.get("sub") or payload.get("user_id")
+        email: str = payload.get("email", "")
 
-    if not user_id:
-        raise ValueError("Invalid token: missing user_id")
+        if not user_id:
+            raise ValueError("Invalid token: missing user_id (sub claim)")
 
-    return {"user_id": user_id, "email": email or ""}
+        return {"user_id": user_id, "email": email}
+
+    except jwt.exceptions.PyJWTError as e:
+        # Log the error for debugging
+        import logging
+        logger = logging.getLogger("todo_api")
+        logger.error(f"JWT verification error: {str(e)}", exc_info=True)
+        # Re-raise with more context
+        raise ValueError(f"Invalid token: {str(e)}") from e
+    except Exception as e:
+        # Log any other unexpected errors
+        import logging
+        logger = logging.getLogger("todo_api")
+        logger.error(f"Unexpected error in verify_jwt_token: {str(e)}", exc_info=True)
+        raise ValueError(f"Token verification failed: {str(e)}") from e

@@ -6,9 +6,11 @@
  * Individual task card/row displaying task information
  * Supports edit, delete, and toggle complete actions
  * Integrates with API client for task operations
+ * Enhanced with Framer Motion animations
  */
 
 import { useState, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Task, TaskPriority } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { api } from "@/lib/api";
@@ -170,11 +172,17 @@ const TaskItem = memo(function TaskItem({
 
   if (viewMode === "card") {
     return (
-      <article
+      <motion.article
+        layout
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, x: -100 }}
+        whileHover={{ scale: 1.02, boxShadow: "0 10px 30px rgba(0,0,0,0.1)" }}
+        transition={{ duration: 0.2 }}
         className={cn(
           baseClasses,
           "p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border",
-          "border-gray-200 dark:border-gray-700 hover:shadow-md",
+          "border-gray-200 dark:border-gray-700",
           className
         )}
         aria-label={`Task: ${task.title}`}
@@ -183,10 +191,12 @@ const TaskItem = memo(function TaskItem({
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* Checkbox */}
-            <button
+            <motion.button
               type="button"
               onClick={handleToggleComplete}
               disabled={isToggling || isDeleting}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               className={cn(
                 "mt-1 w-5 h-5 rounded border-2 flex items-center justify-center",
                 "focus:outline-none focus:ring-2 focus:ring-blue-500",
@@ -200,23 +210,30 @@ const TaskItem = memo(function TaskItem({
               }
               aria-pressed={optimisticCompleted}
             >
-              {optimisticCompleted && (
-                <svg
-                  className="w-3 h-3 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              )}
-            </button>
+              <AnimatePresence mode="wait">
+                {optimisticCompleted && (
+                  <motion.svg
+                    key="checkmark"
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    exit={{ scale: 0, rotate: 180 }}
+                    transition={{ duration: 0.3, type: "spring" }}
+                    className="w-3 h-3 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </motion.svg>
+                )}
+              </AnimatePresence>
+            </motion.button>
 
             {/* Title and Description */}
             <div className="flex-1 min-w-0">
@@ -337,7 +354,7 @@ const TaskItem = memo(function TaskItem({
             </div>
           )}
         </div>
-      </article>
+      </motion.article>
     );
   }
 

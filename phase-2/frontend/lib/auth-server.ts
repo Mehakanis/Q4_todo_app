@@ -2,7 +2,8 @@
  * Better Auth Server Configuration
  *
  * This file configures the Better Auth server with:
- * - PostgreSQL database connection (shared with FastAPI backend)
+ * - Drizzle ORM adapter for type-safe database operations
+ * - Neon Serverless PostgreSQL (shared with FastAPI backend)
  * - Email/password authentication
  * - JWT plugin for token generation
  * - Next.js cookies plugin for session management
@@ -11,37 +12,11 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { jwt } from "better-auth/plugins";
-import { Pool } from "pg";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "@/lib/db-drizzle";
+import * as schema from "@/drizzle/schema";
 
-let poolInstance: Pool | null = null;
 let authInstance: ReturnType<typeof betterAuth> | null = null;
-
-/**
- * Get or create PostgreSQL connection pool
- * Lazy initialization to avoid build-time errors
- */
-function getPool(): Pool {
-  if (poolInstance) {
-    return poolInstance;
-  }
-
-  // Validate required environment variables at runtime (not during build)
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    // During build, provide a placeholder that won't be used
-    // The actual error will be thrown at runtime when the route is called
-    throw new Error("DATABASE_URL environment variable is required");
-  }
-
-  poolInstance = new Pool({
-    connectionString: databaseUrl,
-    max: 10, // Maximum number of clients in the pool
-    idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-    connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection cannot be established
-  });
-
-  return poolInstance;
-}
 
 /**
  * Get or create Better Auth instance
@@ -60,22 +35,22 @@ function getAuth() {
     throw new Error("BETTER_AUTH_SECRET environment variable is required");
   }
 
-  // Get pool - will throw if DATABASE_URL is missing, but that's OK
-  // The error will only occur at runtime when the route is actually called
-  const database = getPool();
-
   /**
-   * Better Auth configuration
+   * Better Auth configuration with Drizzle ORM
    *
    * Features:
+   * - Drizzle ORM adapter for type-safe database operations
    * - Email/password authentication
    * - JWT tokens (7-day expiration)
    * - Session management via cookies
-   * - PostgreSQL database for user storage
+   * - Neon Serverless PostgreSQL for user storage
    */
   authInstance = betterAuth({
-    // Database configuration
-    database: database as Pool,
+    // Database configuration using Drizzle adapter
+    database: drizzleAdapter(db, {
+      provider: "pg", // PostgreSQL provider
+      schema: schema, // Better Auth schema
+    }),
 
     // Secret key for signing tokens and cookies
     secret: secret,

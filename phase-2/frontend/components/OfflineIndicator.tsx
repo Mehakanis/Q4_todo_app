@@ -4,10 +4,17 @@ import { useEffect, useState } from "react";
 import { WifiOff, Wifi } from "lucide-react";
 
 export default function OfflineIndicator() {
-  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [isOnline, setIsOnline] = useState(() => {
+    if (typeof window !== "undefined") {
+      return navigator.onLine;
+    }
+    return true; // Default to online during SSR
+  });
   const [showNotification, setShowNotification] = useState(false);
 
   useEffect(() => {
+    // Only run in browser
+    if (typeof window === "undefined") return;
 
     const handleOnline = () => {
       setIsOnline(true);
@@ -19,6 +26,9 @@ export default function OfflineIndicator() {
       setIsOnline(false);
       setShowNotification(true);
     };
+
+    // Set initial state
+    setIsOnline(navigator.onLine);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);

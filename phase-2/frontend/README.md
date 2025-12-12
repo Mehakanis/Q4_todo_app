@@ -2,6 +2,10 @@
 
 A modern, responsive todo application built with Next.js 16+, TypeScript, and Tailwind CSS. Features include authentication, task management, real-time updates, offline support, and dark mode.
 
+## ✅ Status: Phase 2 Complete
+
+This frontend is fully functional and includes all required features for the full-stack todo web application.
+
 ## Table of Contents
 
 - [Features](#features)
@@ -88,6 +92,8 @@ cp .env.example .env.local
 ```
 
 Edit `.env.local` with your configuration (see [Environment Variables](#environment-variables)).
+
+⚠️ **Note**: `.env.local` files are gitignored. Never commit sensitive credentials.
 
 ### 4. Run the development server
 
