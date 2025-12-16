@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, UserPlus, ListChecks, Zap } from "lucide-react";
+import { CheckCircle2, UserPlus, MessageCircle, Zap } from "lucide-react";
 
 const steps = [
   {
@@ -9,21 +9,21 @@ const steps = [
     icon: UserPlus,
     title: "Create Your Account",
     description:
-      "Sign up in seconds with just your email. No credit card required. Get started with a free account and unlock all features.",
+      "Sign up in seconds with just your email. No credit card required. Get started with a free account and unlock all features including AI chat assistant.",
   },
   {
     number: "02",
-    icon: ListChecks,
-    title: "Start Adding Tasks",
+    icon: MessageCircle,
+    title: "Chat with AI Assistant",
     description:
-      "Create your first task, add descriptions, set priorities, and organize with tags. Your tasks sync instantly across all devices.",
+      "Use natural language to manage your tasks. Say 'Add buy groceries' or 'Show my pending tasks' and the AI chatbot with MCP tools will handle it instantly.",
   },
   {
     number: "03",
     icon: Zap,
     title: "Stay Productive",
     description:
-      "Use filters, search, and shortcuts to manage tasks efficiently. Work offline, export data, and track your progress.",
+      "Use AI chat, filters, search, and shortcuts to manage tasks efficiently. Work offline, export data, track progress with analytics, and sync across all devices.",
   },
 ];
 

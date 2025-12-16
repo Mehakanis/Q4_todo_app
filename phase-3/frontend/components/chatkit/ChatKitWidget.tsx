@@ -14,6 +14,7 @@
 import { useChatKit, ChatKit } from "@openai/chatkit-react";
 import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 interface ChatKitWidgetProps {
   /**
@@ -55,7 +56,6 @@ interface ChatKitWidgetProps {
  * - Compatible with backend's JWKS-based verification
  */
 export default function ChatKitWidget({
-  apiUrl,
   domainKey,
   className = "",
 }: ChatKitWidgetProps) {
@@ -66,7 +66,6 @@ export default function ChatKitWidget({
   const [error, setError] = useState<string | null>(null);
 
   // Get environment variables
-  const backendApiUrl = apiUrl || process.env.NEXT_PUBLIC_CHATKIT_API_URL || "http://localhost:8000/api";
   const chatkitDomainKey = domainKey || process.env.NEXT_PUBLIC_OPENAI_DOMAIN_KEY;
 
   /**
@@ -194,14 +193,12 @@ export default function ChatKitWidget({
 
   // Render the actual ChatKit component
   return (
-    <ChatKitWidgetInner
-      userId={userId}
-      jwtToken={jwtToken}
-      backendApiUrl={backendApiUrl}
-      chatkitDomainKey={chatkitDomainKey}
-      className={className}
-      onError={setError}
-    />
+      <ChatKitWidgetInner
+        jwtToken={jwtToken}
+        chatkitDomainKey={chatkitDomainKey}
+        className={className}
+        onError={setError}
+      />
   );
 }
 
@@ -209,16 +206,12 @@ export default function ChatKitWidget({
  * Inner ChatKit component that only renders when auth is ready
  */
 function ChatKitWidgetInner({
-  userId,
   jwtToken,
-  backendApiUrl,
   chatkitDomainKey,
   className,
   onError,
 }: {
-  userId: string;
   jwtToken: string;
-  backendApiUrl: string;
   chatkitDomainKey?: string;
   className: string;
   onError: (error: string) => void;
@@ -240,11 +233,12 @@ function ChatKitWidgetInner({
       domainKey: chatkitDomainKey || "local-dev",
 
       // Custom fetch function to add JWT token
-      fetch: async (url: string, options?: RequestInit) => {
+      fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
         return fetch(url, {
-          ...options,
+          ...init,
           headers: {
-            ...options?.headers,
+            ...init?.headers,
             Authorization: `Bearer ${jwtToken}`,
           },
         });
@@ -259,7 +253,7 @@ function ChatKitWidgetInner({
   });
 
   return (
-    <div className={className}>
+    <div className={cn("w-full h-full flex flex-col", className)}>
       <ChatKit control={chatkit.control} />
     </div>
   );

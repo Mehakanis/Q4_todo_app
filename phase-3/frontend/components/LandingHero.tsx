@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Zap, Shield, Infinity as InfinityIcon } from "lucide-react";
 
 const benefits = [
-  "Organize tasks with ease",
+  "AI-Powered Task Management",
   "Work offline seamlessly",
   "Secure & private",
   "Cross-device sync",
@@ -45,7 +45,7 @@ export function LandingHero() {
           className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary"
         >
           <Zap className="h-4 w-4" />
-          <span>Modern Task Management</span>
+          <span>AI-Powered Task Management</span>
         </motion.div>
 
         {/* Main Heading */}
@@ -68,8 +68,7 @@ export function LandingHero() {
           transition={{ duration: 0.7, delay: 0.2 }}
           className="mb-8 text-lg text-muted-foreground sm:text-xl md:text-2xl max-w-3xl mx-auto leading-relaxed"
         >
-          The ultimate task management solution with offline support, real-time sync, and powerful
-          features to help you stay on top of your goals. Work seamlessly across all your devices.
+          The ultimate AI-powered task management solution. Chat with your AI assistant to create, update, and manage tasks through natural conversation. Work offline, sync seamlessly, and stay productive across all devices.
         </motion.p>
 
         {/* Benefits List */}
@@ -137,7 +136,7 @@ export function LandingHero() {
           </div>
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-primary" />
-            <span>Lightning Fast</span>
+            <span>AI-Powered</span>
           </div>
         </motion.div>
       </div>

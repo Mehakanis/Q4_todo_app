@@ -16,9 +16,25 @@ import {
   Tags,
   Calendar,
   Sparkles,
+  MessageCircle,
+  Brain,
 } from "lucide-react";
 
 const mainFeatures = [
+  {
+    icon: MessageCircle,
+    title: "AI Chat Assistant",
+    description:
+      "Chat with your AI assistant to manage tasks naturally. Just say 'Add buy groceries' or 'Show my tasks' and the AI handles it instantly. Real-time responses with conversation history saved automatically.",
+    gradient: "from-indigo-500 to-purple-500",
+  },
+  {
+    icon: Brain,
+    title: "Smart Task Operations",
+    description:
+      "The AI understands your requests and can create, list, complete, update, and delete tasks through simple conversation. No need to learn complex commands - just talk naturally.",
+    gradient: "from-purple-500 to-pink-500",
+  },
   {
     icon: Lock,
     title: "Secure Authentication",
@@ -30,15 +46,15 @@ const mainFeatures = [
     icon: ListTodo,
     title: "Advanced Task Management",
     description:
-      "Create, edit, organize, and prioritize tasks with ease. Support for due dates, priorities, tags, and detailed descriptions.",
-    gradient: "from-purple-500 to-pink-500",
+      "Create, edit, organize, and prioritize tasks with ease. Support for due dates, priorities, tags, and detailed descriptions. Kanban board, list, and grid views.",
+    gradient: "from-green-500 to-emerald-500",
   },
   {
     icon: WifiOff,
     title: "Offline-First PWA",
     description:
       "Work seamlessly without internet. All changes sync automatically when you reconnect. Install as an app on any device.",
-    gradient: "from-green-500 to-emerald-500",
+    gradient: "from-teal-500 to-cyan-500",
   },
   {
     icon: Search,
@@ -64,6 +80,8 @@ const mainFeatures = [
 ];
 
 const additionalFeatures = [
+  { icon: MessageCircle, text: "AI Chat" },
+  { icon: Brain, text: "MCP Tools" },
   { icon: Filter, text: "Smart Filtering" },
   { icon: Tags, text: "Tag Organization" },
   { icon: Calendar, text: "Due Date Tracking" },

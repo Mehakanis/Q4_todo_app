@@ -23,5 +23,10 @@
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "better-auth",
+    "context7",
+    "github"
+  ]
 }

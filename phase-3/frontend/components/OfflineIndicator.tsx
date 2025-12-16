@@ -8,7 +8,7 @@ export default function OfflineIndicator() {
     if (typeof window !== "undefined") {
       return navigator.onLine;
     }
-    return true; // Default to online during SSR
+    return true;
   });
   const [showNotification, setShowNotification] = useState(false);
 

@@ -17,7 +17,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth";
 import { signinSchema, safeParse } from "@/lib/validations";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { GlassCard } from "@/components/atoms/GlassCard";
+import { Button } from "@/components/atoms/Button";
+import { cn } from "@/lib/utils";
 
 export default function SigninPage() {
   const router = useRouter();
@@ -215,23 +217,23 @@ export default function SigninPage() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome back</h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <h2 className="text-3xl font-bold text-foreground">Welcome back</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
             Sign in to continue managing your tasks
           </p>
         </div>
 
         {/* Signin Form */}
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 py-6 space-y-6">
+          <GlassCard variant="elevated" className="p-8 space-y-6">
             {/* API Error Message */}
             {apiError && (
               <div
-                className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded-md"
+                className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg backdrop-blur-sm"
                 role="alert"
               >
                 <p className="text-sm">{apiError}</p>
@@ -242,7 +244,7 @@ export default function SigninPage() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                className="block text-sm font-medium text-foreground mb-2"
               >
                 Email Address <span className="text-red-500" aria-label="required">*</span>
               </label>
@@ -255,11 +257,15 @@ export default function SigninPage() {
                 value={formData.email}
                 onChange={handleChange}
                 onBlur={() => validateField("email")}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg backdrop-blur-sm border transition-all duration-200",
+                  "bg-white/10 dark:bg-gray-800/10 border-white/30 dark:border-gray-700/50",
+                  "text-foreground placeholder:text-muted-foreground",
+                  "focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50",
                   errors.email
-                    ? "border-red-500 dark:border-red-400"
-                    : "border-gray-300 dark:border-gray-600"
-                }`}
+                    ? "border-red-500/50 dark:border-red-400/50 focus:ring-red-500/50"
+                    : ""
+                )}
                 placeholder="you@example.com"
                 aria-required="true"
                 aria-invalid={!!errors.email}
@@ -278,13 +284,13 @@ export default function SigninPage() {
               <div className="flex items-center justify-between mb-2">
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="block text-sm font-medium text-foreground"
                 >
                   Password <span className="text-red-500" aria-label="required">*</span>
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
                 >
                   Forgot password?
                 </Link>
@@ -298,11 +304,15 @@ export default function SigninPage() {
                 value={formData.password}
                 onChange={handleChange}
                 onBlur={() => validateField("password")}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                className={cn(
+                  "w-full px-4 py-3 rounded-lg backdrop-blur-sm border transition-all duration-200",
+                  "bg-white/10 dark:bg-gray-800/10 border-white/30 dark:border-gray-700/50",
+                  "text-foreground placeholder:text-muted-foreground",
+                  "focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50",
                   errors.password
-                    ? "border-red-500 dark:border-red-400"
-                    : "border-gray-300 dark:border-gray-600"
-                }`}
+                    ? "border-red-500/50 dark:border-red-400/50 focus:ring-red-500/50"
+                    : ""
+                )}
                 placeholder="••••••••"
                 aria-required="true"
                 aria-invalid={!!errors.password}
@@ -322,36 +332,34 @@ export default function SigninPage() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-white/30 dark:border-gray-700/50 rounded bg-white/10 dark:bg-gray-800/10 backdrop-blur-sm"
               />
               <label
                 htmlFor="remember-me"
-                className="ml-2 block text-sm text-gray-900 dark:text-gray-300"
+                className="ml-2 block text-sm text-foreground"
               >
                 Remember me
               </label>
             </div>
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              loading={isLoading}
+              className="w-full"
+              variant="primary"
             >
-              {isLoading ? (
-                <LoadingSpinner size="small" color="white" label="Signing in..." />
-              ) : (
-                "Sign in"
-              )}
-            </button>
-          </div>
+              {isLoading ? "Signing in..." : "Sign in"}
+            </Button>
+          </GlassCard>
 
           {/* Sign Up Link */}
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link
               href="/signup"
-              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
             >
               Sign up
             </Link>

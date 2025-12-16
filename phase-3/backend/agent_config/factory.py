@@ -70,7 +70,7 @@ def create_model(provider: str | None = None, model: str | None = None) -> Any:
         if not api_key:
             raise ValueError("GEMINI_API_KEY environment variable not set")
 
-        model_name = model or os.getenv("GEMINI_DEFAULT_MODEL", "gemini-1.5-flash")
+        model_name = model or os.getenv("GEMINI_DEFAULT_MODEL", "gemini-2.5-flash")
         return LitellmModel(
             model=f"gemini/{model_name}",
             api_key=api_key

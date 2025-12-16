@@ -118,7 +118,7 @@ class TodoAgent:
 
         Args:
             provider: Override LLM_PROVIDER env var ("openai" | "gemini")
-            model: Override model name (e.g., "gpt-4o", "gemini-1.5-flash")
+            model: Override model name (e.g., "gpt-4o", "gemini-2.5-flash")
 
         Raises:
             ValueError: If provider not supported or API key missing

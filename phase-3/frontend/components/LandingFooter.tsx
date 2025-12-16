@@ -48,7 +48,7 @@ export function LandingFooter() {
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4 max-w-xs">
-              The modern task management solution that helps you stay organized and productive.
+              AI-powered task management solution with intelligent chatbot. Chat with your assistant to manage tasks through natural conversation.
             </p>
             <div className="flex gap-4">
               <motion.a
