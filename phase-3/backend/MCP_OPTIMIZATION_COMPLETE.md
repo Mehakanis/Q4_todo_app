@@ -160,8 +160,8 @@ uv run pytest tests/test_mcp_tools.py -v
    - Performance improvement: 50-100x faster
 
 2. **backend/agent_config/todo_agent.py**
-   - Line 39: Increased timeout from 5s to 30s
-   - Line 47: Added `parallel_tool_calls=False`
+   - Line 194: Set `client_session_timeout_seconds=30.0`
+   - Line 204: Added `parallel_tool_calls=False`
    - Prevents database locks and timeout errors
 
 3. **backend/agent_config/factory.py**
@@ -187,15 +187,7 @@ feat(phase-3): add Groq model support to AI agent
 - Update agent documentation with Groq usage examples
 ```
 
-### Commit 2: MCP Performance Fixes
-```
-fix(phase-3): increase MCP timeout and disable parallel tool calls
-- Increase MCPServerStdio timeout from 5s to 30s (allowing database operations)
-- Add parallel_tool_calls=False to prevent database locks
-- Update AGENT_INSTRUCTIONS to document bulk_update_tasks tool
-```
-
-### Commit 3: Bulk Tool Optimization (CRITICAL)
+### Commit 2: Bulk Tool Optimization (CRITICAL)
 ```
 fix(phase-3): optimize bulk_update_tasks to use direct SQL UPDATE/DELETE
 - Replace ORM fetch-then-update pattern with direct SQL operations
@@ -204,21 +196,30 @@ fix(phase-3): optimize bulk_update_tasks to use direct SQL UPDATE/DELETE
 - Single database operation completes regardless of task count
 ```
 
-### Commit 4: Import Fix
+### Commit 3: MCP Performance Fixes
 ```
-fix(phase-3): resolve import circular dependency and simplify agent initialization
-- Remove problematic imports causing agent_settings not found errors
-- Remove unused AGENT_TRACING_ENABLED configuration
-- Simplify agent initialization without tracing configuration
+fix(phase-3): disable parallel tool calls and fix MCPServerStdio configuration
+- Add parallel_tool_calls=False to prevent database locks
+- Update AGENT_INSTRUCTIONS to document bulk_update_tasks tool
+- Correct use of ModelSettings for OpenAI Agents SDK
 ```
 
-### Commit 5: Comprehensive Tests
+### Commit 4: Comprehensive Tests
 ```
 test(phase-3): add comprehensive MCP tools test suite verifying bulk_update_tasks optimization
 - 14 tests covering all MCP tools and operations
 - Performance verification tests proving <100ms operation time
 - User isolation and filter status tests
 - Edge case handling
+```
+
+### Commit 5: MCP Timeout Fix (Correct)
+```
+fix(phase-3): correct MCPServerStdio timeout parameter to use client_session_timeout_seconds
+- Use correct parameter: client_session_timeout_seconds (per OpenAI Agents SDK docs)
+- Increased from default 5s to 30s for MCP protocol operations
+- Fixes startup error and eliminates MCP timeout errors during tool execution
+- Verified: Backend now starts without import/initialization errors
 ```
 
 ## Verification Steps
