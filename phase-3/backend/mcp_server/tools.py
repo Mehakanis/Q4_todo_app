@@ -376,7 +376,7 @@ def bulk_update_tasks(
     - Purpose: Update multiple tasks efficiently in a single operation
     - Stateless: All state persisted to database
     - User Isolation: Enforced via user_id parameter
-    - Efficiency: Reduces multiple tool calls to a single database operation
+    - Efficiency: Uses direct SQL UPDATE/DELETE for optimal performance
 
     Args:
         user_id: User's unique identifier (string UUID from Better Auth)
@@ -392,65 +392,76 @@ def bulk_update_tasks(
         dict: Bulk operation result
             - count (int): Number of tasks updated
             - action (str): Action performed
-            - affected_tasks (list): IDs of affected tasks
 
     Example:
         >>> bulk_update_tasks(user_id="user-123", action="complete", filter_status="pending")
-        {"count": 5, "action": "completed", "affected_tasks": [1, 2, 3, 4, 5]}
+        {"count": 5, "action": "completed"}
     """
-    from sqlmodel import select, func
+    from sqlmodel import select, update, delete
     from models import Task
 
     # Get database session
     session = next(get_session())
 
     try:
-        # Build query to find tasks matching filter
-        statement = select(Task).where(Task.user_id == user_id)
+        # First, get the count of affected tasks
+        count_statement = select(Task).where(Task.user_id == user_id)
 
         if filter_status == "pending":
-            statement = statement.where(Task.completed == False)
+            count_statement = count_statement.where(Task.completed == False)
         elif filter_status == "completed":
-            statement = statement.where(Task.completed == True)
+            count_statement = count_statement.where(Task.completed == True)
 
-        # Get affected tasks (for response)
-        tasks_to_update = session.exec(statement).all()
-        affected_task_ids = [task.id for task in tasks_to_update]
+        affected_tasks = session.exec(count_statement).all()
+        count = len(affected_tasks)
 
-        if not tasks_to_update:
+        if count == 0:
             return {
                 "count": 0,
                 "action": action,
-                "affected_tasks": [],
                 "message": f"No {filter_status} tasks found to {action}",
             }
 
-        # Perform bulk action
+        # Perform bulk action using direct SQL for optimal performance
         if action == "complete":
-            # Mark all matching tasks as completed
-            for task in tasks_to_update:
-                task.completed = True
-            session.add_all(tasks_to_update)
+            # Build UPDATE statement for completion
+            update_statement = update(Task).where(Task.user_id == user_id)
+
+            if filter_status == "pending":
+                update_statement = update_statement.where(Task.completed == False)
+            elif filter_status == "completed":
+                update_statement = update_statement.where(Task.completed == True)
+
+            # Set completed to True
+            update_statement = update_statement.values(completed=True)
+
+            # Execute the update
+            session.execute(update_statement)
             session.commit()
 
             return {
-                "count": len(tasks_to_update),
+                "count": count,
                 "action": "completed",
-                "affected_tasks": affected_task_ids,
-                "message": f"Marked {len(tasks_to_update)} task(s) as completed",
+                "message": f"Marked {count} task(s) as completed",
             }
 
         elif action == "delete":
-            # Delete all matching tasks
-            for task in tasks_to_update:
-                session.delete(task)
+            # Build DELETE statement for deletion
+            delete_statement = delete(Task).where(Task.user_id == user_id)
+
+            if filter_status == "pending":
+                delete_statement = delete_statement.where(Task.completed == False)
+            elif filter_status == "completed":
+                delete_statement = delete_statement.where(Task.completed == True)
+
+            # Execute the delete
+            session.execute(delete_statement)
             session.commit()
 
             return {
-                "count": len(tasks_to_update),
+                "count": count,
                 "action": "deleted",
-                "affected_tasks": affected_task_ids,
-                "message": f"Deleted {len(tasks_to_update)} task(s)",
+                "message": f"Deleted {count} task(s)",
             }
 
         else:
