@@ -55,19 +55,9 @@ Agent: bulk_update_tasks(user_id, action="complete", filter_status="pending")
 Result: Marks all pending tasks as complete in one operation
 ```
 
-### 4. Tracing Overhead
+### 4. Tracing Configuration
 
-**Issue**: OpenAI Agents SDK's built-in tracing adds overhead and can cause performance issues.
-
-**Solution Implemented**:
-- Added `AGENT_TRACING_ENABLED` environment variable (default: false)
-- Tracing is disabled by default for production performance
-- Can be enabled for debugging: `AGENT_TRACING_ENABLED=true`
-
-```python
-if not settings.agent_tracing_enabled:
-    agent_settings.tracing_enabled = False
-```
+**Note**: By default, agent tracing is not configured, which reduces overhead. If you need to enable tracing for debugging, use OpenAI's built-in tracing with the Agents SDK documentation patterns. For production deployments, tracing should remain disabled to optimize performance.
 
 ### 5. API Key Mismatches
 
@@ -96,13 +86,7 @@ if not settings.agent_tracing_enabled:
   - Efficient single-operation batch updates
   - Comprehensive documentation and examples
 
-#### 3. `config.py`
-- Added `agent_tracing_enabled` configuration
-- Loaded from `AGENT_TRACING_ENABLED` environment variable
-- Defaults to `False` for performance
-
-#### 4. `.env.example`
-- Added `AGENT_TRACING_ENABLED` variable documentation
+#### 3. `.env.example`
 - Added `GROQ_DEFAULT_MODEL` example
 - Documented all LLM provider options
 
@@ -131,17 +115,7 @@ The agent will now call tools sequentially, which is safer and more reliable:
 - No database lock contention
 - Predictable performance
 
-### 3. Enable Tracing Only When Debugging
-
-```bash
-# Development with tracing (for debugging)
-AGENT_TRACING_ENABLED=true
-
-# Production (default, for performance)
-AGENT_TRACING_ENABLED=false
-```
-
-### 4. Monitor API Key Configuration
+### 3. Monitor API Key Configuration
 
 Check logs for debug messages:
 ```
@@ -171,9 +145,6 @@ GEMINI_DEFAULT_MODEL=gemini-2.0-flash
 # Groq Configuration
 GROQ_API_KEY=gsk-proj-...
 GROQ_DEFAULT_MODEL=llama-3.3-70b-versatile
-
-# Agent Configuration
-AGENT_TRACING_ENABLED=false  # Set to "true" for debugging
 ```
 
 ## Timeout Configuration
@@ -215,7 +186,6 @@ Result: ✅ No "Timed out" errors
 ### Test 4: API Key Detection
 ```
 Check startup logs for:
-[CONFIG] Agent Tracing: DISABLED
 [DEBUG] Groq API key loaded: gsk-proj-abc1... (length: 48)
 Result: ✅ Correct provider initialized with correct API key
 ```
@@ -226,7 +196,6 @@ Result: ✅ Correct provider initialized with correct API key
 ```bash
 grep "LLM_PROVIDER=" .env
 grep "GROQ_API_KEY=" .env
-grep "AGENT_TRACING_ENABLED=" .env
 ```
 
 **Verify API key format**:
@@ -254,7 +223,7 @@ curl -X POST http://localhost:8000/api/{user_id}/chat \
 | Complete 10 tasks | 10 calls × 2-5s each = 20-50s | 1 call × 1-3s = 1-3s | **10-50x faster** |
 | Timeout errors | Frequent (5s timeout) | Rare (30s timeout) | **Eliminated** |
 | Database locks | Common with parallel calls | Prevented by sequential | **100% improvement** |
-| Tracing overhead | ~20-30% overhead | 0% overhead (disabled) | **20-30% faster** |
+| Total improvement | Timeout failures + slow operations | Fast, reliable operations | **10-50x faster overall** |
 
 ## Additional Resources
 

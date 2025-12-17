@@ -37,15 +37,10 @@ class Settings:
         self.debug = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
         self.environment = os.getenv("ENVIRONMENT", "development")
 
-        # Agent/Tracing configuration
-        # Disable tracing to improve performance and prevent overhead
-        self.agent_tracing_enabled = os.getenv("AGENT_TRACING_ENABLED", "false").lower() in ("true", "1", "yes")
-
         # Log configuration for debugging
         if self.environment != "production":
             print(f"[CONFIG] Better Auth URL: {self.better_auth_url}")
             print(f"[CONFIG] Frontend URL: {self.frontend_url}")
-            print(f"[CONFIG] Agent Tracing: {'ENABLED' if self.agent_tracing_enabled else 'DISABLED'}")
 
 
 settings = Settings()

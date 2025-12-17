@@ -14,12 +14,9 @@ Architecture:
 import os
 from pathlib import Path
 
-from agents import Agent, settings as agent_settings
+from agents import Agent
 from agents.mcp import MCPServerStdio
 from agents.model_settings import ModelSettings
-
-from agent_config.factory import create_model
-from config import settings
 
 
 # Agent Instructions
@@ -172,12 +169,9 @@ class TodoAgent:
             The agent connects to MCP server via stdio transport.
             The MCP server must be available as a Python module at mcp.tools.
         """
-        # Disable tracing to improve performance and prevent overhead
-        # Tracing can be enabled via AGENT_TRACING_ENABLED environment variable
-        if not settings.agent_tracing_enabled:
-            agent_settings.tracing_enabled = False
-
         # Create model configuration using factory
+        from agent_config.factory import create_model
+
         self.model = create_model(provider=provider, model=model)
 
         # Get path to MCP server module
