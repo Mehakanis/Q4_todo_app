@@ -142,8 +142,8 @@ class TodoAgent:
         Initialize TodoAgent with AI model and MCP server connection.
 
         Args:
-            provider: Override LLM_PROVIDER env var ("openai" | "gemini")
-            model: Override model name (e.g., "gpt-4o", "gemini-2.5-flash")
+            provider: Override LLM_PROVIDER env var ("openai" | "gemini" | "groq")
+            model: Override model name (e.g., "gpt-4o", "gemini-2.5-flash", "llama-3.3-70b-versatile")
 
         Raises:
             ValueError: If provider not supported or API key missing
@@ -153,6 +153,8 @@ class TodoAgent:
             >>> agent = TodoAgent()
             >>> # Gemini agent
             >>> agent = TodoAgent(provider="gemini")
+            >>> # Groq agent
+            >>> agent = TodoAgent(provider="groq")
 
         Note:
             The agent connects to MCP server via stdio transport.
@@ -218,7 +220,7 @@ def create_todo_agent(provider: str | None = None, model: str | None = None) -> 
     explicitly instantiating the class.
 
     Args:
-        provider: Override LLM_PROVIDER env var ("openai" | "gemini")
+        provider: Override LLM_PROVIDER env var ("openai" | "gemini" | "groq")
         model: Override model name
 
     Returns:
@@ -228,5 +230,7 @@ def create_todo_agent(provider: str | None = None, model: str | None = None) -> 
         >>> agent = create_todo_agent()
         >>> # Or with explicit provider
         >>> agent = create_todo_agent(provider="gemini", model="gemini-1.5-pro")
+        >>> # Or with Groq
+        >>> agent = create_todo_agent(provider="groq", model="llama-3.3-70b-versatile")
     """
     return TodoAgent(provider=provider, model=model)
