@@ -24,12 +24,14 @@ Install required Python packages for AI agents and MCP:
 
 ```bash
 cd backend
-# Install core packages
+# Install core packages (OpenAI Agents SDK and Official MCP SDK)
 uv add openai-agents mcp
 
 # Install LiteLLM with openai-agents integration for Gemini support
 uv add "openai-agents[litellm]"
 ```
+
+**Note**: The MCP server implementation uses the **Official MCP Python SDK** (`mcp` package) with `FastMCP` for creating the server, and the **OpenAI Agents SDK** (`agents` package) provides `MCPServerStdio` for connecting to the MCP server via stdio transport.
 
 **Note**: The `openai-agents[litellm]` package includes LiteLLM integration, which is required if you plan to use Gemini models. For OpenAI-only setups, you can skip this step.
 

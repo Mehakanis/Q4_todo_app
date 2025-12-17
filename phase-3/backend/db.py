@@ -50,16 +50,21 @@ else:
 # Create synchronous engine for migrations
 if IS_TEST or DATABASE_URL.startswith("sqlite"):
     # SQLite doesn't support pool_size, max_overflow, pool_pre_ping
+    # Disable SQL query logging for cleaner logs (set echo=False)
+    # Set SQL_ECHO=true in .env if you want to see SQL queries
+    sql_echo = os.getenv("SQL_ECHO", "false").lower() in ("true", "1", "yes")
     sync_engine = create_engine(
         DATABASE_URL,
-        echo=ENVIRONMENT == "development",
+        echo=sql_echo,
         connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
     )
 else:
     # PostgreSQL supports connection pooling
+    # Disable SQL query logging for cleaner logs (set SQL_ECHO=true in .env if needed)
+    sql_echo = os.getenv("SQL_ECHO", "false").lower() in ("true", "1", "yes")
     sync_engine = create_engine(
         DATABASE_URL,
-        echo=ENVIRONMENT == "development",
+        echo=sql_echo,
         pool_size=10,
         max_overflow=20,
         pool_pre_ping=True,
@@ -70,9 +75,11 @@ if not IS_TEST and DATABASE_URL != "sqlite:///:memory:":
     # Convert postgresql:// to postgresql+asyncpg:// for async support
     async_database_url = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
+    # Use same SQL_ECHO setting for async engine
+    sql_echo = os.getenv("SQL_ECHO", "false").lower() in ("true", "1", "yes")
     async_engine = create_async_engine(
         async_database_url,
-        echo=ENVIRONMENT == "development",
+        echo=sql_echo,
         pool_size=10,
         max_overflow=20,
         pool_pre_ping=True,

@@ -100,7 +100,7 @@ Legend:
 - [X] T003 [P] Add NEXT_PUBLIC_CHATKIT_API_URL=http://localhost:8000/api/chat (full URL) and optional NEXT_PUBLIC_OPENAI_DOMAIN_KEY (for production) to frontend/.env.local.example
 - [X] T004 [P] Create backend/services/__init__.py (already exists from Phase 2)
 - [X] T005 [P] Create backend/agents/__init__.py with module documentation
-- [X] T006 [P] Create backend/mcp/__init__.py with module documentation
+- [X] T006 [P] Create backend/mcp_server/__init__.py with module documentation (renamed from `mcp/` to avoid package shadowing)
 
 **Parallel Execution**: All tasks in Phase 1 can run in parallel (T001-T006).
 
@@ -164,9 +164,9 @@ AND task appears in database with correct user_id
 
 **Tasks**:
 
-- [X] T017 [US1] Create backend/src/mcp/tools.py with add_task(user_id, title, description) MCP tool calling task_service.create_task
-- [X] T018 [US1] Create backend/src/agents/todo_agent.py with TodoAgent class using OpenAI Agents SDK and add_task MCP tool
-- [X] T019 [US1] Create backend/src/routers/chat.py with POST /api/{user_id}/chat endpoint using SSE streaming
+- [X] T017 [US1] Create backend/mcp_server/tools.py with FastMCP server and add_task(user_id, title, description) MCP tool using @mcp.tool() decorator
+- [X] T018 [US1] Create backend/agent_config/todo_agent.py with TodoAgent class using OpenAI Agents SDK and MCPServerStdio connection
+- [X] T019 [US1] Create backend/routers/chat.py with POST /api/{user_id}/chat endpoint using SSE streaming and async context manager for MCP server
 
 **Parallel Execution**: T017 and T018 can be developed in parallel → T019 depends on both.
 
@@ -194,9 +194,9 @@ AND tasks are formatted in readable list
 
 **Tasks**:
 
-- [X] T020 [US2] Add list_tasks(user_id, status) MCP tool to backend/src/mcp/tools.py with filter support (all/pending/completed)
-- [X] T021 [US2] Register list_tasks tool with TodoAgent in backend/src/agents/todo_agent.py
-- [X] T022 [US2] Update TodoAgent system instructions in backend/src/agents/todo_agent.py to handle list commands ("show tasks", "what's pending", "list completed")
+- [X] T020 [US2] Add list_tasks(user_id, status) MCP tool to backend/mcp_server/tools.py with @mcp.tool() decorator and filter support (all/pending/completed)
+- [X] T021 [US2] MCP tools automatically registered with TodoAgent via MCPServerStdio connection
+- [X] T022 [US2] Update TodoAgent system instructions in backend/agent_config/todo_agent.py to handle list commands ("show tasks", "what's pending", "list completed")
 
 **Parallel Execution**: All tasks in Phase 4 are sequential (must complete in order T020 → T021 → T022).
 
@@ -225,9 +225,9 @@ AND task.completed = true in database
 
 **Tasks**:
 
-- [X] T023 [US3] Add complete_task(user_id, task_id) MCP tool to backend/src/mcp/tools.py calling task_service.update_task_status
-- [X] T024 [US3] Register complete_task tool with TodoAgent in backend/src/agents/todo_agent.py
-- [X] T025 [US3] Update TodoAgent system instructions in backend/src/agents/todo_agent.py to handle complete commands ("mark complete", "I finished", "done with task X")
+- [X] T023 [US3] Add complete_task(user_id, task_id) MCP tool to backend/mcp_server/tools.py with @mcp.tool() decorator calling task_service.toggle_complete
+- [X] T024 [US3] MCP tools automatically registered with TodoAgent via MCPServerStdio connection
+- [X] T025 [US3] Update TodoAgent system instructions in backend/agent_config/todo_agent.py to handle complete commands ("mark complete", "I finished", "done with task X")
 
 **Parallel Execution**: All tasks in Phase 5 are sequential (must complete in order T023 → T024 → T025).
 
@@ -258,9 +258,9 @@ AND task no longer exists in database
 
 **Tasks**:
 
-- [X] T026 [US4] Add delete_task(user_id, task_id) MCP tool to backend/src/mcp/tools.py calling task_service.delete_task
-- [X] T027 [US4] Register delete_task tool with TodoAgent in backend/src/agents/todo_agent.py
-- [X] T028 [US4] Update TodoAgent system instructions in backend/src/agents/todo_agent.py to handle delete commands ("delete task", "remove task", "cancel task")
+- [X] T026 [US4] Add delete_task(user_id, task_id) MCP tool to backend/mcp_server/tools.py with @mcp.tool() decorator calling task_service.delete_task
+- [X] T027 [US4] MCP tools automatically registered with TodoAgent via MCPServerStdio connection
+- [X] T028 [US4] Update TodoAgent system instructions in backend/agent_config/todo_agent.py to handle delete commands ("delete task", "remove task", "cancel task")
 
 **Parallel Execution**: All tasks in Phase 6 are sequential (must complete in order T026 → T027 → T028).
 
@@ -288,9 +288,9 @@ AND task.title = "Call mom tonight" in database
 
 **Tasks**:
 
-- [X] T029 [US5] Add update_task(user_id, task_id, title, description) MCP tool to backend/src/mcp/tools.py calling task_service.update_task_details
-- [X] T030 [US5] Register update_task tool with TodoAgent in backend/src/agents/todo_agent.py
-- [X] T031 [US5] Update TodoAgent system instructions in backend/src/agents/todo_agent.py to handle update commands ("change task", "update task", "rename task")
+- [X] T029 [US5] Add update_task(user_id, task_id, title, description) MCP tool to backend/mcp_server/tools.py with @mcp.tool() decorator calling task_service.update_task
+- [X] T030 [US5] MCP tools automatically registered with TodoAgent via MCPServerStdio connection
+- [X] T031 [US5] Update TodoAgent system instructions in backend/agent_config/todo_agent.py to handle update commands ("change task", "update task", "rename task")
 
 **Parallel Execution**: All tasks in Phase 7 are sequential (must complete in order T029 → T030 → T031).
 
@@ -318,9 +318,9 @@ AND does not ask for clarification
 
 **Tasks**:
 
-- [X] T032 [US6] Add conversation history loading to backend/src/routers/chat.py endpoint using conversation_service.get_conversation_history
-- [X] T033 [US6] Build message array from database history + new user message in backend/src/routers/chat.py before calling TodoAgent
-- [X] T034 [US6] Update TodoAgent system instructions in backend/src/agents/todo_agent.py to use conversation context for follow-up commands
+- [X] T032 [US6] Implement SQLiteSession for conversation memory in backend/services/chatkit_server.py
+- [X] T033 [US6] Create unique session IDs per user+thread combination for conversation isolation
+- [X] T034 [US6] Wrap agent execution in async context manager (async with mcp_server:) to enable MCP tool access
 
 **Parallel Execution**: All tasks in Phase 8 are sequential (must complete in order T032 → T033 → T034).
 
@@ -573,24 +573,27 @@ Each user story adds a new MCP tool and updates TodoAgent instructions independe
 ### Backend Files Created/Modified
 
 **New Files**:
-- `backend/src/services/__init__.py`
-- `backend/src/services/task_service.py`
-- `backend/src/services/conversation_service.py`
-- `backend/src/agents/__init__.py`
-- `backend/src/agents/factory.py`
-- `backend/src/agents/todo_agent.py`
-- `backend/src/mcp/__init__.py`
-- `backend/src/mcp/tools.py`
-- `backend/src/models/conversation.py`
-- `backend/src/models/message.py`
-- `backend/src/routers/chat.py`
-- `backend/src/schemas/chat.py`
+- `backend/services/__init__.py`
+- `backend/services/task_service.py`
+- `backend/services/conversation_service.py`
+- `backend/services/chatkit_server.py`
+- `backend/agent_config/__init__.py`
+- `backend/agent_config/factory.py`
+- `backend/agent_config/todo_agent.py`
+- `backend/mcp_server/__init__.py`
+- `backend/mcp_server/__main__.py`
+- `backend/mcp_server/tools.py`
+- `backend/models/conversation.py`
+- `backend/models/message.py`
+- `backend/routers/chat.py`
+- `backend/routers/chatkit.py`
+- `backend/schemas/chat.py`
 
 **Modified Files**:
 - `backend/pyproject.toml` (T001)
 - `backend/.env.example` (T002)
-- `backend/src/routers/tasks.py` (T011)
-- `backend/src/main.py` (T039)
+- `backend/routers/tasks.py` (T011)
+- `backend/main.py` (T039)
 
 ### Frontend Files Created/Modified
 

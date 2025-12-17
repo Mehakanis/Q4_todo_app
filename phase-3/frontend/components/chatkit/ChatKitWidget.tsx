@@ -250,6 +250,7 @@ function ChatKitWidgetInner({
       console.error("ChatKit error:", error);
       onError(error.message || "ChatKit encountered an error");
     },
+
   });
 
   return (

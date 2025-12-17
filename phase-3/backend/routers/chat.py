@@ -258,65 +258,67 @@ async def stream_chat_response(
         assistant_response = ""
         tool_calls_log = []
 
-        # 5. Run agent with streaming and retry logic
-        try:
-            result = await run_agent_with_retry(agent, agent_messages)
-        except HTTPException as e:
-            # Handle errors from retry wrapper - send as SSE error event
-            error_detail = e.detail if isinstance(e.detail, dict) else {"success": False, "error": {"code": "UNKNOWN_ERROR", "message": str(e.detail)}}
-            error_response = {
-                "type": "error",
-                "code": error_detail.get("error", {}).get("code", "UNKNOWN_ERROR"),
-                "message": error_detail.get("error", {}).get("message", "An error occurred")
-            }
-            logger.error(f"Agent error for user {user_id}: {error_response}")
-            yield f"data: {json.dumps(error_response)}\n\n"
-            return
-
-        # 6. Stream agent output as SSE events
-        async for event in result:
-            # Handle different event types from Agents SDK
-            event_type = event.get("type")
-
-            if event_type == "content_delta":
-                # Text content streaming
-                content_delta = event.get("content", "")
-                assistant_response += content_delta
-
-                # Yield SSE event
-                yield f"data: {json.dumps({'type': 'message', 'content': content_delta, 'done': False})}\n\n"
-
-            elif event_type == "tool_call":
-                # Tool invocation event
-                tool_name = event.get("tool_name", "")
-                tool_args = event.get("tool_args", {})
-
-                tool_calls_log.append({
-                    "tool": tool_name,
-                    "args": tool_args,
-                })
-
-                # Yield SSE event
-                yield f"data: {json.dumps({'type': 'tool_call', 'tool': tool_name, 'args': tool_args})}\n\n"
-
-            elif event_type == "error":
-                # Error event
-                error_message = event.get("message", "An error occurred")
-                yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
+        # 5. Run agent with streaming and retry logic within MCP server context
+        # The MCP server must be started before using the agent
+        async with todo_agent.mcp_server:
+            try:
+                result = await run_agent_with_retry(agent, agent_messages)
+            except HTTPException as e:
+                # Handle errors from retry wrapper - send as SSE error event
+                error_detail = e.detail if isinstance(e.detail, dict) else {"success": False, "error": {"code": "UNKNOWN_ERROR", "message": str(e.detail)}}
+                error_response = {
+                    "type": "error",
+                    "code": error_detail.get("error", {}).get("code", "UNKNOWN_ERROR"),
+                    "message": error_detail.get("error", {}).get("message", "An error occurred")
+                }
+                logger.error(f"Agent error for user {user_id}: {error_response}")
+                yield f"data: {json.dumps(error_response)}\n\n"
                 return
 
-        # 7. Store assistant response in database
-        await add_message(
-            session=session,
-            user_id=user_id,
-            conversation_id=conversation_id,
-            role="assistant",
-            content=assistant_response,
-            tool_calls={"calls": tool_calls_log} if tool_calls_log else None,
-        )
+            # 6. Stream agent output as SSE events
+            async for event in result:
+                # Handle different event types from Agents SDK
+                event_type = event.get("type")
 
-        # 8. Send final "done" event with conversation_id
-        yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation_id})}\n\n"
+                if event_type == "content_delta":
+                    # Text content streaming
+                    content_delta = event.get("content", "")
+                    assistant_response += content_delta
+
+                    # Yield SSE event
+                    yield f"data: {json.dumps({'type': 'message', 'content': content_delta, 'done': False})}\n\n"
+
+                elif event_type == "tool_call":
+                    # Tool invocation event
+                    tool_name = event.get("tool_name", "")
+                    tool_args = event.get("tool_args", {})
+
+                    tool_calls_log.append({
+                        "tool": tool_name,
+                        "args": tool_args,
+                    })
+
+                    # Yield SSE event
+                    yield f"data: {json.dumps({'type': 'tool_call', 'tool': tool_name, 'args': tool_args})}\n\n"
+
+                elif event_type == "error":
+                    # Error event
+                    error_message = event.get("message", "An error occurred")
+                    yield f"data: {json.dumps({'type': 'error', 'message': error_message})}\n\n"
+                    return
+
+            # 7. Store assistant response in database
+            await add_message(
+                session=session,
+                user_id=user_id,
+                conversation_id=conversation_id,
+                role="assistant",
+                content=assistant_response,
+                tool_calls={"calls": tool_calls_log} if tool_calls_log else None,
+            )
+
+            # 8. Send final "done" event with conversation_id
+            yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation_id})}\n\n"
 
     except HTTPException as e:
         # Handle HTTPException from agent retry wrapper

@@ -6,22 +6,28 @@
 
 ## Overview
 
-Phase II uses **Neon Serverless PostgreSQL** as the shared database for both frontend (Better Auth) and backend (FastAPI). The database contains two categories of tables:
+The Todo application uses **Neon Serverless PostgreSQL** as the primary database, plus **SQLite** for AI conversation memory. The database architecture spans three phases:
 
+**Phase II** (Web Application):
 1. **Better Auth Tables**: Managed by Better Auth via Drizzle ORM (frontend)
 2. **Application Tables**: Managed by SQLModel/Alembic (backend)
 
-Both systems coexist in the same database without conflicts.
+**Phase III** (AI Chatbot):
+3. **SQLite Database**: Automatic conversation memory via SQLiteSession (primary)
+4. **Conversation Tables** (Optional): Manual conversation persistence in PostgreSQL
+
+All systems coexist without conflicts.
 
 ## Table of Contents
 
 1. [Database Architecture](#database-architecture)
 2. [Better Auth Tables](#better-auth-tables)
 3. [Application Tables](#application-tables)
-4. [Indexes](#indexes)
-5. [Relationships](#relationships)
-6. [Migration Strategy](#migration-strategy)
-7. [Related Specifications](#related-specifications)
+4. [Phase III: AI Chatbot Tables](#phase-iii-ai-chatbot-tables)
+5. [Indexes](#indexes)
+6. [Relationships](#relationships)
+7. [Migration Strategy](#migration-strategy)
+8. [Related Specifications](#related-specifications)
 
 ---
 
@@ -334,6 +340,181 @@ class Task(SQLModel, table=True):
 
 ---
 
+## Phase III: AI Chatbot Tables
+
+Phase III adds conversational AI capabilities with dual conversation persistence:
+1. **SQLiteSession** (Primary) - Automatic memory for ChatKit endpoint
+2. **PostgreSQL Tables** (Optional) - Manual memory for direct REST endpoint
+
+### SQLite Database (chat_sessions.db)
+
+**Location**: `backend/chat_sessions.db`
+**Managed By**: OpenAI Agents SDK (SQLiteSession)
+**Purpose**: Automatic conversation memory for ChatKit endpoint
+
+**Key Features**:
+- Automatic conversation history retrieval
+- Automatic message storage
+- User+thread isolation via session IDs
+- Survives server restarts
+- No manual schema management required
+
+**Session ID Format**:
+```python
+session_id = f"user_{user_id}_thread_{thread.id}"
+# Example: "user_abc123_thread_xyz789"
+```
+
+**Internal Schema** (managed automatically by SDK):
+- Session items stored as JSON blobs
+- Indexed by session_id for fast retrieval
+- Automatic cleanup of old sessions
+
+**Usage Example**:
+```python
+from agents import SQLiteSession
+
+# Create session for user+thread
+session = SQLiteSession(
+    session_id=f"user_{user_id}_thread_{thread.id}",
+    db_path="chat_sessions.db"
+)
+
+# Automatic history retrieval
+history = await session.get_items()  # Returns full conversation
+
+# Run agent with session (automatic storage)
+result = Runner.run_streamed(agent, user_message, session=session)
+```
+
+---
+
+### PostgreSQL Tables (Optional - Alternative Approach)
+
+These tables provide an alternative conversation persistence strategy for the direct REST endpoint (`/api/{user_id}/chat`).
+
+### 1. `conversations` Table
+
+Stores conversation metadata.
+
+**Columns**:
+
+| Column Name | Type | Constraints | Default | Description |
+|------------|------|-------------|---------|-------------|
+| `id` | integer | PRIMARY KEY, AUTO INCREMENT | - | Conversation ID |
+| `user_id` | text | NOT NULL, INDEX | - | Owner user ID (references `user.id`) |
+| `created_at` | timestamp | NOT NULL | NOW() | Conversation creation time |
+| `updated_at` | timestamp | NOT NULL | NOW() | Last message time |
+
+**Indexes**:
+- PRIMARY KEY: `id`
+- INDEX: `user_id` (for user isolation queries)
+
+**Foreign Key** (Logical):
+- `user_id` logically references `user.id`
+
+**Python Type**:
+```python
+from sqlmodel import Field, SQLModel
+from datetime import datetime
+from typing import Optional
+
+class Conversation(SQLModel, table=True):
+    __tablename__ = "conversations"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+```
+
+**State Transitions**:
+- [New] → [Active] → [Archived/Deleted] (future enhancement)
+- Current implementation: Active only
+
+---
+
+### 2. `messages` Table
+
+Stores conversation messages.
+
+**Columns**:
+
+| Column Name | Type | Constraints | Default | Description |
+|------------|------|-------------|---------|-------------|
+| `id` | integer | PRIMARY KEY, AUTO INCREMENT | - | Message ID |
+| `conversation_id` | integer | NOT NULL, INDEX, FOREIGN KEY | - | Parent conversation ID |
+| `user_id` | text | NOT NULL, INDEX | - | User ID (denormalized for queries) |
+| `role` | text | NOT NULL | - | Message role: "user", "assistant", "system" |
+| `content` | text | NOT NULL | - | Message content |
+| `tool_calls` | jsonb | NULL | null | Tool invocations (JSON) |
+| `created_at` | timestamp | NOT NULL, INDEX | NOW() | Message creation time |
+
+**Indexes**:
+- PRIMARY KEY: `id`
+- INDEX: `conversation_id` (for fetching conversation history)
+- INDEX: `user_id` (for user isolation)
+- INDEX: `created_at` (for chronological ordering)
+- COMPOSITE INDEX: `(conversation_id, created_at)` (optimized history queries)
+
+**Foreign Key**:
+- `conversation_id` REFERENCES `conversations(id)` ON DELETE CASCADE
+
+**Python Type**:
+```python
+from sqlmodel import Field, SQLModel, Column
+from sqlalchemy import JSON
+from datetime import datetime
+from typing import Optional
+
+class Message(SQLModel, table=True):
+    __tablename__ = "messages"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    conversation_id: int = Field(foreign_key="conversations.id", index=True)
+    user_id: str = Field(index=True)  # Denormalized for user queries
+    role: str  # "user" | "assistant" | "system"
+    content: str
+    tool_calls: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+```
+
+**Message Roles**:
+- `user`: Messages from the user
+- `assistant`: AI agent responses
+- `system`: System instructions/context (internal use)
+
+**Tool Calls Format** (JSON):
+```json
+{
+  "tool_name": "add_task",
+  "arguments": {
+    "user_id": "abc123",
+    "title": "Buy groceries",
+    "description": null
+  },
+  "result": {
+    "task_id": 42,
+    "status": "created",
+    "title": "Buy groceries"
+  }
+}
+```
+
+**Validation Rules** (Application-level):
+- `conversation_id` must exist in `conversations` table
+- `user_id` must match parent `conversation.user_id`
+- `role` must be in ["user", "assistant", "system"]
+- `content` must be non-empty
+- `tool_calls` must be valid JSON (assistant role only)
+
+**Immutability**:
+- Messages are append-only (never updated after creation)
+- Provides audit trail of conversation history
+- No DELETE operations (conversations archived instead)
+
+---
+
 ## Indexes
 
 ### Better Auth Tables
@@ -359,7 +540,7 @@ class Task(SQLModel, table=True):
 
 ---
 
-### Application Tables
+### Application Tables (Phase II)
 
 **`tasks` table**:
 - PRIMARY KEY: `id`

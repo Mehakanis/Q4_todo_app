@@ -28,5 +28,6 @@
     "better-auth",
     "context7",
     "github"
-  ]
+  ],
+  "enableAllProjectMcpServers": true
 }

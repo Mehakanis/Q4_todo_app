@@ -98,10 +98,11 @@ Add AI-powered conversational interface to the existing Phase 2 Todo application
 **Requirement**: Monorepo with /frontend, /backend, and clear separation of concerns.
 
 **Compliance**:
-- Backend: New directories (services/, agents/, mcp/), new files (models/conversation.py, models/message.py, routers/chat.py, schemas/chat.py)
+- Backend: New directories (services/, agent_config/, mcp_server/), new files (models/conversation.py, models/message.py, routers/chat.py, routers/chatkit.py, schemas/chat.py, services/chatkit_server.py)
 - Frontend: New directories (components/chatkit/, app/chat/), ChatKit integration
 - Maintains existing /frontend and /backend structure
 - All specifications in /specs/004-ai-chatbot/
+- **MCP Server**: Located at `backend/mcp_server/` (not `mcp/`) to avoid package shadowing with installed `mcp` package
 
 **Notes**: Fully compliant. Extends existing monorepo without disrupting Phase 2 structure.
 
@@ -173,29 +174,30 @@ specs/004-ai-chatbot/
 
 ```text
 backend/
-├── src/
-│   ├── models/
-│   │   ├── conversation.py      # NEW: Conversation model (user_id, created_at, updated_at)
-│   │   ├── message.py           # NEW: Message model (conversation_id, role, content, tool_calls)
-│   │   └── task.py              # EXISTING: Task model from Phase 2
-│   ├── services/
-│   │   ├── task_service.py      # NEW: Extract task CRUD logic (shared by MCP & REST)
-│   │   └── conversation_service.py  # NEW: Conversation & message management
-│   ├── agents/
-│   │   ├── factory.py           # NEW: Model factory for AI provider abstraction
-│   │   └── todo_agent.py        # NEW: TodoAgent with MCP tools integration
-│   ├── mcp/
-│   │   ├── __init__.py          # NEW: MCP server initialization
-│   │   ├── tools.py             # NEW: 5 MCP tools (add/list/complete/delete/update_task)
-│   │   └── server.py            # NEW: MCP server setup with Official MCP SDK
-│   ├── routers/
-│   │   ├── chat.py              # NEW: POST /api/{user_id}/chat endpoint (SSE streaming)
-│   │   └── tasks.py             # EXISTING: Refactor to use task_service.py
-│   ├── schemas/
-│   │   └── chat.py              # NEW: ChatRequest, ChatResponse, MessageSchema
-│   └── alembic/
-│       └── versions/
-│           └── [timestamp]_add_conversation_message.py  # NEW: Migration for Conversation & Message tables
+├── models/
+│   ├── conversation.py      # NEW: Conversation model (user_id, created_at, updated_at)
+│   ├── message.py           # NEW: Message model (conversation_id, role, content, tool_calls)
+│   └── task.py              # EXISTING: Task model from Phase 2
+├── services/
+│   ├── task_service.py      # NEW: Extract task CRUD logic (shared by MCP & REST)
+│   ├── conversation_service.py  # NEW: Conversation & message management
+│   └── chatkit_server.py    # NEW: ChatKit server with SQLiteSession integration
+├── agent_config/
+│   ├── factory.py           # NEW: Model factory for AI provider abstraction
+│   └── todo_agent.py        # NEW: TodoAgent with MCPServerStdio connection
+├── mcp_server/              # NEW: MCP server (renamed from mcp/ to avoid package shadowing)
+│   ├── __init__.py          # NEW: MCP server module initialization
+│   ├── __main__.py          # NEW: Entry point for running as module (python -m mcp_server)
+│   └── tools.py             # NEW: 5 MCP tools using @mcp.tool() decorator (FastMCP)
+├── routers/
+│   ├── chat.py              # NEW: POST /api/{user_id}/chat endpoint (SSE streaming)
+│   ├── chatkit.py           # NEW: POST /api/chatkit endpoint (ChatKit widget backend)
+│   └── tasks.py             # EXISTING: Refactor to use task_service.py
+├── schemas/
+│   └── chat.py              # NEW: ChatRequest, ChatResponse, MessageSchema
+└── alembic/
+    └── versions/
+        └── [timestamp]_add_conversation_message.py  # NEW: Migration for Conversation & Message tables
 └── tests/
     ├── integration/
     │   ├── test_chat_endpoint.py     # NEW: Chat endpoint integration tests
@@ -290,28 +292,31 @@ All Phase 3 requirements align with constitution principles. No additional compl
 │                                    │                                       │
 │                                    ▼                                       │
 │  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │  TodoAgent (agents/todo_agent.py)                                   │  │
+│  │  TodoAgent (agent_config/todo_agent.py)                             │  │
 │  │  - OpenAI Agents SDK Agent + Runner                                │  │
-│  │  - Build message array (history + new message)                     │  │
-│  │  - Run agent with MCP tools                                        │  │
-│  │  - Stream responses                                                │  │
+│  │  - MCPServerStdio connection to MCP server                         │  │
+│  │  - Async context manager for MCP lifecycle                         │  │
+│  │  - Stream responses via Runner.run_streamed()                      │  │
 │  └────────────────────────────────────────────────────────────────────┘  │
 │                                    │                                       │
 │                                    ▼                                       │
 │  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │  Model Factory (agents/factory.py)                                  │  │
+│  │  Model Factory (agent_config/factory.py)                            │  │
 │  │  - create_model(provider: "openai" | "gemini")                     │  │
 │  │  - AI provider abstraction                                         │  │
 │  └────────────────────────────────────────────────────────────────────┘  │
 │                                    │                                       │
+│                                stdio transport                            │
 │                                    ▼                                       │
 │  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │  MCP Tools (mcp/tools.py)                                           │  │
+│  │  MCP Server (mcp_server/tools.py)                                   │  │
+│  │  - FastMCP server with @mcp.tool() decorators                      │  │
 │  │  - add_task(user_id, title, description)                           │  │
 │  │  - list_tasks(user_id, status)                                     │  │
 │  │  - complete_task(user_id, task_id)                                 │  │
 │  │  - delete_task(user_id, task_id)                                   │  │
 │  │  - update_task(user_id, task_id, title, description)               │  │
+│  │  - Run as: python -m mcp_server                                    │  │
 │  └────────────────────────────────────────────────────────────────────┘  │
 │                                    │                                       │
 │                                    ▼                                       │

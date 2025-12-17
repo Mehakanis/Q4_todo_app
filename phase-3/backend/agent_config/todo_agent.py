@@ -2,14 +2,22 @@
 TodoAgent - AI assistant for task management (Phase III).
 
 This module defines the TodoAgent class using OpenAI Agents SDK.
-The agent orchestrates task operations via MCP tools and provides
-conversational task management capabilities.
+The agent connects to a separate MCP server process via MCPServerStdio
+and accesses task management tools through the MCP protocol.
+
+Architecture:
+- MCP Server: Separate process exposing task tools via FastMCP
+- Agent: Connects to MCP server via stdio transport
+- Tools: Available through MCP protocol (not direct imports)
 """
 
+import os
+from pathlib import Path
+
 from agents import Agent
+from agents.mcp import MCPServerStdio
 
 from agent_config.factory import create_model
-from mcp.tools import add_task, complete_task, delete_task, list_tasks, update_task
 
 
 # Agent Instructions
@@ -78,6 +86,8 @@ You have access to the following task management tools:
    - Use natural language, not technical jargon
    - Acknowledge user actions positively
    - Provide context when appropriate
+   - NEVER include user IDs in any response - they are internal identifiers only
+   - When addressing the user, use their name if available, or simply omit any identifier
 
 ## Response Pattern
 
@@ -95,6 +105,22 @@ You have access to the following task management tools:
 - Be proactive in suggesting next steps
 - Handle errors gracefully with helpful guidance
 - Never expose technical details like database errors
+- NEVER mention or display user IDs in your responses - they are for internal use only
+- NEVER include user IDs in greetings, task listings, or any text you generate
+- When greeting users, use their name (if provided) or a friendly greeting without any IDs
+- When listing tasks, just say "Here are your tasks:" or similar - never include user IDs
+- User IDs like "XzsECG438dQUNiGwuNYPGHURfqEHADt8" should NEVER appear in your responses
+
+## Response Examples
+
+✅ Good: "Here are all your tasks:"
+❌ Bad: "Here are all your tasks again, XzsECG438dQUNiGwuNYPGHURfqEHADt8:"
+
+✅ Good: "Hello! How can I help you today?"
+❌ Bad: "Hello there! How can I help you today, XzsECG438dQUNiGwuNYPGHURfqEHADt8?"
+
+✅ Good: "I've added 'Buy groceries' to your tasks."
+❌ Bad: "I've added 'Buy groceries' for user XzsECG438dQUNiGwuNYPGHURfqEHADt8."
 """
 
 
@@ -102,19 +128,18 @@ class TodoAgent:
     """
     TodoAgent for conversational task management.
 
-    This class wraps an OpenAI Agents SDK Agent with MCP tools
-    for task operations. It provides streaming response capabilities
-    and maintains conversation context.
+    This class creates an OpenAI Agents SDK Agent that connects to
+    a separate MCP server process for task management tools.
 
     Attributes:
         agent: OpenAI Agents SDK Agent instance
         model: AI model configuration (from factory)
-        tools: List of MCP tools registered with agent
+        mcp_server: MCPServerStdio instance managing server process
     """
 
     def __init__(self, provider: str | None = None, model: str | None = None):
         """
-        Initialize TodoAgent with AI model and MCP tools.
+        Initialize TodoAgent with AI model and MCP server connection.
 
         Args:
             provider: Override LLM_PROVIDER env var ("openai" | "gemini")
@@ -128,25 +153,37 @@ class TodoAgent:
             >>> agent = TodoAgent()
             >>> # Gemini agent
             >>> agent = TodoAgent(provider="gemini")
+
+        Note:
+            The agent connects to MCP server via stdio transport.
+            The MCP server must be available as a Python module at mcp.tools.
         """
         # Create model configuration using factory
         self.model = create_model(provider=provider, model=model)
 
-        # Register MCP tools
-        self.tools = [
-            add_task,
-            list_tasks,
-            complete_task,
-            delete_task,
-            update_task,
-        ]
+        # Get path to MCP server module
+        # The MCP server is in phase-3/backend/mcp_server/tools.py
+        backend_dir = Path(__file__).parent.parent
+        mcp_server_path = backend_dir / "mcp_server" / "tools.py"
 
-        # Create agent with tools and instructions
+        # Create MCP server connection via stdio
+        # This launches the MCP server as a separate process
+        self.mcp_server = MCPServerStdio(
+            name="task-management-server",
+            params={
+                "command": "python",
+                "args": ["-m", "mcp_server"],
+                "env": os.environ.copy(),  # Pass environment variables
+            },
+        )
+
+        # Create agent with MCP server
+        # Tools are now accessed via MCP protocol, not direct imports
         self.agent = Agent(
             name="TodoAgent",
             model=self.model,
             instructions=AGENT_INSTRUCTIONS,
-            tools=self.tools,
+            mcp_servers=[self.mcp_server],
         )
 
     def get_agent(self) -> Agent:
@@ -161,7 +198,13 @@ class TodoAgent:
             >>> agent = todo_agent.get_agent()
             >>> # Use with Runner for streaming
             >>> from agents import Runner
-            >>> result = Runner.run_streamed(agent, [{"role": "user", "content": "Add buy milk"}])
+            >>> async with todo_agent.mcp_server:
+            >>>     result = await Runner.run_streamed(agent, "Add buy milk")
+
+        Note:
+            The MCP server connection must be managed with async context:
+            - Use 'async with mcp_server:' to start/stop server
+            - Agent.run() is now async when using MCP servers
         """
         return self.agent
 

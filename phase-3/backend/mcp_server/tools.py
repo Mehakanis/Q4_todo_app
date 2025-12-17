@@ -1,28 +1,36 @@
 """
-MCP tools for task management operations (Phase III).
+MCP Server for task management operations (Phase III).
 
-This module defines MCP tools that expose task operations to the AI agent.
-Each tool calls the task_service layer for business logic execution.
+This module implements a proper MCP server using the FastMCP SDK.
+The server exposes task operations as MCP tools that can be called by AI agents.
 
-Tools provided:
+MCP Tools provided:
 - add_task: Create a new task for a user
 - list_tasks: Retrieve tasks with optional filtering
 - complete_task: Mark a task as complete
 - delete_task: Remove a task from the database
 - update_task: Modify task title or description
+
+Architecture:
+- MCP Server runs as a separate process (not inside agent)
+- Agent connects via MCPServerStdio transport
+- Tools use @mcp.tool() decorator (not @function_tool)
 """
 
 from typing import Literal, Optional
 
-from agents import function_tool
+from mcp.server.fastmcp import FastMCP
 from sqlmodel import Session
 
 from db import get_session
 from services.task_service import TaskService
 from schemas.requests import CreateTaskRequest
 
+# Create MCP server instance
+mcp = FastMCP("task-management-server")
 
-@function_tool
+
+@mcp.tool()
 def add_task(
     user_id: str,
     title: str,
@@ -81,7 +89,7 @@ def add_task(
         session.close()
 
 
-@function_tool
+@mcp.tool()
 def list_tasks(
     user_id: str,
     status: Literal["all", "pending", "completed"] = "all",
@@ -167,7 +175,7 @@ def list_tasks(
         session.close()
 
 
-@function_tool
+@mcp.tool()
 def complete_task(
     user_id: str,
     task_id: int,
@@ -220,7 +228,7 @@ def complete_task(
         session.close()
 
 
-@function_tool
+@mcp.tool()
 def delete_task(
     user_id: str,
     task_id: int,
@@ -281,7 +289,7 @@ def delete_task(
         session.close()
 
 
-@function_tool
+@mcp.tool()
 def update_task(
     user_id: str,
     task_id: int,

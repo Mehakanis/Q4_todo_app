@@ -3,23 +3,38 @@
 ## Project Information
 
 **Project Name**: Todo Full-Stack Web Application
-**Current Phase**: Phase II - Web Application
-**Version**: 2.0.0
+**Current Phase**: Phase III - AI-Powered Chatbot
+**Version**: 3.0.0
 **Status**: ✅ Complete
 
 ## Purpose
 
-Build a modern, production-ready todo management web application that demonstrates full-stack development best practices, authentication, user isolation, and advanced features like export/import, real-time updates, and offline support.
+Build a modern, production-ready todo management web application that demonstrates full-stack development best practices, authentication, user isolation, AI-powered conversational interfaces, and advanced features like export/import, real-time updates, and offline support.
 
-This project serves as a comprehensive learning resource for building full-stack web applications with Next.js and FastAPI, following spec-driven development methodology.
+This project serves as a comprehensive learning resource for building full-stack web applications with Next.js and FastAPI, integrating AI agents via OpenAI Agents SDK and MCP (Model Context Protocol), following spec-driven development methodology.
 
-## Current Phase: Phase II
+## Current Phase: Phase III
 
-**Objective**: Transform the Phase I console application into a full-stack web application with multi-user authentication, RESTful API, and responsive frontend.
+**Objective**: Extend the Phase II web application with AI-powered conversational interface using OpenAI ChatKit, Agents SDK, and MCP server for natural language task management.
+
+### Phase III Completion Status
+
+All Phase III requirements have been successfully implemented:
+
+#### ✅ AI Chatbot Features (All Complete)
+- ✅ Natural language task creation via chat
+- ✅ Natural language task listing and filtering
+- ✅ Natural language task completion
+- ✅ Natural language task deletion
+- ✅ Natural language task updates
+- ✅ Conversation context maintenance across sessions
+- ✅ Dual conversation memory (SQLiteSession + PostgreSQL)
+- ✅ Real-time streaming responses via Server-Sent Events (SSE)
+- ✅ Multi-provider AI support (OpenAI, Gemini)
 
 ### Phase II Completion Status
 
-All Phase II requirements have been successfully implemented:
+All Phase II requirements remain functional:
 
 #### ✅ Core Features (All Complete)
 - ✅ Multi-user authentication with Better Auth
@@ -82,6 +97,10 @@ All Phase II requirements have been successfully implemented:
 - **ORM**: SQLModel (combines SQLAlchemy and Pydantic)
 - **Database**: Neon Serverless PostgreSQL
 - **Authentication**: JWT with Better Auth shared secret
+- **AI Orchestration**: OpenAI Agents SDK (>=0.2.9)
+- **MCP Server**: Official MCP Python SDK (>=1.0.0) with FastMCP
+- **AI Providers**: OpenAI (gpt-4o), Gemini (via LiteLLM)
+- **Conversation Memory**: SQLiteSession for ChatKit endpoint
 - **Migrations**: Alembic
 - **Testing**: pytest with httpx
 - **Package Manager**: UV
@@ -172,17 +191,22 @@ All Phase II requirements have been successfully implemented:
 - Advanced features (export/import, search, filtering, etc.)
 - Production-ready deployment
 
-### Phase III (Chatbot) - 🔜 Planned
-- Natural language task creation
-- AI-powered task suggestions
-- Voice input support
-- Smart reminders
-- Integration with external calendars
+### Phase III (AI Chatbot) - ✅ Complete
+- ✅ Natural language task management (add, list, complete, delete, update)
+- ✅ Conversational interface with OpenAI ChatKit widget
+- ✅ AI agent with OpenAI Agents SDK
+- ✅ MCP server with 5 task management tools
+- ✅ Conversation context maintenance with SQLiteSession
+- ✅ Dual conversation persistence (SQLiteSession + PostgreSQL)
+- ✅ Real-time streaming responses via Server-Sent Events
+- ✅ Multi-provider support (OpenAI gpt-4o, Gemini via LiteLLM)
+- ✅ JWT authentication integration
+- ✅ User isolation at conversation and task levels
 
 ## Repository Structure
 
 ```
-phase-2/
+phase-3/
 ├── .spec-kit/
 │   └── config.yaml                # Spec-Kit configuration
 ├── specs/                         # Specifications
@@ -190,7 +214,8 @@ phase-2/
 │   ├── architecture.md            # System architecture
 │   ├── features/                  # Feature specs
 │   │   ├── task-crud.md
-│   │   └── authentication.md
+│   │   ├── authentication.md
+│   │   └── ai-chatbot.md          # NEW: AI chatbot feature
 │   ├── api/                       # API specs
 │   │   └── rest-endpoints.md
 │   ├── database/                  # Database specs
@@ -201,14 +226,34 @@ phase-2/
 ├── frontend/                      # Next.js application
 │   ├── CLAUDE.md                  # Frontend guidelines
 │   ├── app/                       # App Router pages
+│   │   ├── chat/                  # NEW: Chat page
+│   │   └── ...
 │   ├── components/                # React components
+│   │   ├── chatkit/               # NEW: ChatKit widget
+│   │   └── ...
 │   └── lib/                       # Utilities and API client
 ├── backend/                       # FastAPI application
 │   ├── CLAUDE.md                  # Backend guidelines
 │   ├── main.py                    # Entry point
-│   ├── models.py                  # Database models
-│   ├── routes/                    # API routes
+│   ├── models/                    # Database models
+│   │   ├── conversation.py        # NEW: Conversation model
+│   │   ├── message.py             # NEW: Message model
+│   │   └── task.py
+│   ├── routers/                   # API routes
+│   │   ├── chat.py                # NEW: Chat endpoint
+│   │   ├── chatkit.py             # NEW: ChatKit endpoint
+│   │   └── tasks.py
 │   ├── services/                  # Business logic
+│   │   ├── chatkit_server.py      # NEW: ChatKit server
+│   │   ├── conversation_service.py # NEW: Conversation service
+│   │   └── task_service.py
+│   ├── agent_config/              # NEW: AI agent configuration
+│   │   ├── factory.py             # Model factory
+│   │   └── todo_agent.py          # TodoAgent definition
+│   ├── mcp_server/                # NEW: MCP server
+│   │   ├── __init__.py
+│   │   ├── __main__.py            # Entry point: python -m mcp_server
+│   │   └── tools.py               # 5 MCP tools with @mcp.tool()
 │   └── middleware/                # Middleware
 ├── CLAUDE.md                      # Root-level guide
 ├── docker-compose.yml             # Docker orchestration
@@ -235,14 +280,45 @@ This project follows **Spec-Driven Development (SDD)** methodology:
 4. **Testing**: Comprehensive tests verify spec compliance
 5. **Iteration**: Specs updated if requirements change
 
+## Phase III Implementation Highlights
+
+### MCP Server Architecture
+- **Location**: `backend/mcp_server/` (renamed from `mcp/` to avoid package shadowing)
+- **Framework**: Official MCP Python SDK with FastMCP
+- **Tools**: 5 tools decorated with `@mcp.tool()` (add_task, list_tasks, complete_task, delete_task, update_task)
+- **Connection**: stdio transport via MCPServerStdio
+- **Lifecycle**: Managed by async context manager (`async with mcp_server:`)
+- **Entry Point**: `python -m mcp_server`
+
+### AI Agent Configuration
+- **Agent SDK**: OpenAI Agents SDK (agents package)
+- **Connection**: MCPServerStdio for connecting to MCP server
+- **Model Factory**: Supports OpenAI (gpt-4o) and Gemini (via LiteLLM)
+- **Instructions**: Comprehensive system prompt for conversational task management
+- **Streaming**: Token-by-token response streaming via Runner.run_streamed()
+
+### Conversation Memory
+- **Dual Architecture**:
+  - **ChatKit Endpoint**: SQLiteSession for automatic conversation history management
+  - **Direct REST Endpoint**: PostgreSQL database persistence
+- **Session Isolation**: Unique session IDs per user+thread combination
+- **Persistence**: Survives server restarts (SQLiteSession stored in SQLite database)
+- **Stateless Server**: No in-memory state, all conversation data in database
+
+### Frontend Integration
+- **Widget**: OpenAI ChatKit (@openai/chatkit-react)
+- **Authentication**: JWT token from Better Auth attached to requests
+- **Streaming**: Real-time SSE response display
+- **API Endpoint**: `/api/chatkit` for ChatKit widget, `/api/{user_id}/chat` for direct access
+
 ## Next Steps
 
-For Phase III (Chatbot), the following features are planned:
-- Integration with OpenAI or similar LLM for natural language processing
+For Phase IV (Advanced AI Features), the following features are planned:
 - Voice input for task creation
 - AI-powered task suggestions based on user patterns
 - Smart reminders and notifications
 - External calendar integration (Google Calendar, Outlook)
+- Multi-modal input (images, files, voice)
 
 ## References
 

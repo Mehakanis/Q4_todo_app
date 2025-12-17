@@ -11,7 +11,7 @@ This document captures the technical research and decision-making process for im
 ## 1. OpenAI Agents SDK Integration
 
 ### Decision
-Use **OpenAI Agents SDK** with `function_tool` decorator pattern for agent orchestration and tool calling.
+Use **OpenAI Agents SDK** with **FastMCP SDK** for agent orchestration and tool calling via Model Context Protocol (MCP).
 
 ### Rationale
 - **Official SDK**: Built and maintained by OpenAI, ensuring compatibility with latest models and features
@@ -38,74 +38,131 @@ Use **OpenAI Agents SDK** with `function_tool` decorator pattern for agent orche
 
 ### Implementation Pattern
 
-```python
-import asyncio
-from agents import Agent, Runner, function_tool
+**MCP Server Implementation** (`backend/mcp_server/tools.py`):
 
-# Define tools with function_tool decorator
-@function_tool
-def add_task(user_id: str, title: str, description: str = "") -> dict:
-    """Add a new task for the user.
+```python
+from typing import Optional
+from mcp.server.fastmcp import FastMCP
+from sqlmodel import Session
+
+from db import get_session
+from services.task_service import TaskService
+from schemas.requests import CreateTaskRequest
+
+# Create MCP server instance
+mcp = FastMCP("task-management-server")
+
+@mcp.tool()
+def add_task(
+    user_id: str,
+    title: str,
+    description: Optional[str] = None,
+) -> dict:
+    """Create a new task for a user.
 
     Args:
-        user_id: The user's unique identifier
-        title: The task title (required)
-        description: Optional task description
+        user_id: User's unique identifier (string UUID from Better Auth)
+        title: Task title (required, max 200 characters)
+        description: Task description (optional, max 1000 characters)
 
     Returns:
-        dict with task_id, title, created_at
+        dict: Task creation result
+            - task_id (int): Created task ID
+            - status (str): "created"
+            - title (str): Task title
     """
-    # Call service layer (shared with REST API)
-    task = task_service.create_task(user_id, title, description)
-    return {"task_id": task.id, "title": task.title, "created_at": task.created_at}
+    # Get database session
+    session = next(get_session())
 
-# Create agent with tools
+    try:
+        # Create task using task_service
+        task_data = CreateTaskRequest(
+            title=title,
+            description=description,
+            priority="medium",
+            due_date=None,
+            tags=None,
+        )
+
+        created_task = TaskService.create_task(
+            db=session,
+            user_id=user_id,
+            task_data=task_data
+        )
+
+        return {
+            "task_id": created_task.id,
+            "status": "created",
+            "title": created_task.title,
+        }
+
+    finally:
+        session.close()
+```
+
+**Agent Configuration** (`backend/agent_config/todo_agent.py`):
+
+```python
+from agents import Agent
+from agents.mcp import MCPServerStdio
+from agent_config.factory import create_model
+
+# Create MCP server connection via stdio
+mcp_server = MCPServerStdio(
+    name="task-management-server",
+    params={
+        "command": "python",
+        "args": ["-m", "mcp_server"],
+        "env": os.environ.copy(),
+    },
+)
+
+# Create agent with MCP server
 todo_agent = Agent(
     name="TodoAgent",
     instructions="You are a helpful task management assistant...",
-    tools=[add_task, list_tasks, complete_task, delete_task, update_task],
-    model="gpt-4o-2024-11-20"
+    model=create_model(),
+    mcp_servers=[mcp_server],
 )
 
-# Run agent with Runner.run()
-async def handle_chat(user_message: str, user_id: str):
-    result = await Runner.run(todo_agent, input=user_message)
-    return result.final_output
+# Run agent with async context manager
+async with mcp_server:
+    result = Runner.run_streamed(todo_agent, input=user_message)
 ```
 
 **Key Points**:
-- Import from `agents` package (not `openai_agents`)
-- Tools decorated with `@function_tool` for automatic schema generation
-- Agent configured with instructions and model selection (no separate client needed)
-- Runner.run() is a class method that executes the agent
-- Service layer called from within tools for business logic reuse
-
-**Note**: The OpenAI Agents SDK does not expose `run_streamed()` method. For streaming, we'll need to implement SSE streaming at the FastAPI layer by yielding chunks from the agent's response.
+- **MCP Server**: Separate process using `FastMCP` SDK with `@mcp.tool()` decorator
+- **Agent Connection**: Uses `MCPServerStdio` to connect to MCP server via stdio transport
+- **Async Context Manager**: `async with mcp_server:` required to connect before agent execution
+- **Module Structure**: MCP server at `backend/mcp_server/` to avoid package shadowing
+- **Service Layer**: MCP tools call shared service layer for business logic reuse
+- **Streaming**: `Runner.run_streamed()` provides token-by-token streaming
 
 ---
 
 ## 2. MCP Tools Design
 
 ### Decision
-Implement **in-process MCP tools** using `function_tool` pattern rather than subprocess-based MCP server.
+Implement **MCP server** using FastMCP SDK with `@mcp.tool()` decorator pattern as a separate process connected via stdio transport.
 
 ### Rationale
-- **Lower Latency**: In-process function calls (< 1ms) vs subprocess communication (30-50ms overhead)
-- **Shared Database Session**: Direct access to SQLAlchemy session and service layer without serialization
-- **Simpler Deployment**: No separate MCP server process to manage, monitor, or scale
-- **Easier Debugging**: Standard Python debugging tools work, no inter-process complexity
-- **Better Error Handling**: Direct exception propagation, no protocol-level error parsing
+- **Official MCP Protocol**: Uses Model Context Protocol (MCP) standard for tool invocation
+- **Process Isolation**: MCP server runs as separate process, improving stability and isolation
+- **FastMCP SDK**: High-level API from official MCP Python SDK simplifies server implementation
+- **Stdio Transport**: Agent connects to MCP server via stdio (standard input/output) for low-latency IPC
+- **Automatic Lifecycle**: Async context manager handles server start/stop lifecycle
+- **Shared Service Layer**: MCP tools call same service layer as REST endpoints for business logic reuse
 
 ### Alternatives Considered
-1. **stdio Subprocess MCP**
-   - Pros: Process isolation, language-agnostic MCP protocol
-   - Cons: 30-50ms latency overhead, complex serialization, harder debugging
-   - Rejected: Latency unacceptable for interactive chat, adds operational complexity
+1. **In-Process @function_tool Pattern**
+   - Pros: Lower latency (< 1ms), direct function calls, simpler debugging
+   - Cons: Not official MCP protocol, no process isolation, harder to scale
+   - Rejected: Using official MCP standard is preferred for long-term maintainability
 
 2. **HTTP MCP Server**
    - Pros: Network-accessible, could support external MCP clients
    - Cons: Network latency, authentication complexity, separate deployment
-   - Rejected: Not needed for single-application use case, overkill
+   - Rejected: stdio transport sufficient for single-application use case
 
 ### Tool Specifications
 
@@ -117,7 +174,11 @@ Implement **in-process MCP tools** using `function_tool` pattern rather than sub
 | delete_task     | user_id: str, task_id: int               | dict(success: bool, message: str)| task_service.delete_task()       |
 | update_task     | user_id: str, task_id: int, title: str = None, description: str = None | dict(task_id, updated_fields) | task_service.update_task() |
 
-**Implementation Note**: Each tool validates user_id matches JWT token claim to enforce user isolation.
+**Implementation Notes**:
+- Each tool validates user_id matches JWT token claim to enforce user isolation
+- MCP server module located at `backend/mcp_server/` (not `mcp/`) to avoid package shadowing
+- Run MCP server with: `python -m mcp_server`
+- Agent must wrap execution in `async with mcp_server:` context for proper lifecycle management
 
 ---
 
@@ -671,18 +732,25 @@ async def get_tasks(
 **Usage in MCP Tools**:
 
 ```python
-# backend/src/mcp/tools.py
-from openai_agents import function_tool
+# backend/mcp_server/tools.py
+from mcp.server.fastmcp import FastMCP
 from services import task_service
 from database import get_db_session
 
-@function_tool
-async def add_task(user_id: str, title: str, description: str = "") -> dict:
+# Create MCP server instance
+mcp = FastMCP("task-management-server")
+
+@mcp.tool()
+def add_task(user_id: str, title: str, description: str = "") -> dict:
     """Add a new task via MCP tool."""
-    async with get_db_session() as session:
+    session = next(get_db_session())
+
+    try:
         # Call service layer
-        task = await task_service.create_task(session, user_id, title, description)
+        task = task_service.create_task(session, user_id, title, description)
         return {"task_id": task.id, "title": task.title, "created_at": task.created_at}
+    finally:
+        session.close()
 ```
 
 **Usage in REST Endpoints**:
@@ -722,8 +790,8 @@ async def create_task_endpoint(
 
 | Topic                          | Decision                                      | Confidence | Implementation Status |
 |--------------------------------|-----------------------------------------------|------------|----------------------|
-| OpenAI Agents SDK Integration  | Use Agents SDK with function_tool pattern     | High       | ✅ Implemented       |
-| MCP Tools Design               | In-process tools, no subprocess               | High       | ✅ Implemented       |
+| OpenAI Agents SDK Integration  | Use Agents SDK with FastMCP for MCP protocol  | High       | ✅ Implemented       |
+| MCP Tools Design               | Separate MCP server via stdio transport       | High       | ✅ Implemented       |
 | Streaming Architecture         | Server-Sent Events (SSE)                      | High       | ✅ Implemented       |
 | Conversation Persistence       | Dual: SQLiteSession + Database persistence    | High       | ✅ Implemented       |
 | Model Factory Pattern          | Centralized factory with env-based selection  | High       | ✅ Implemented       |

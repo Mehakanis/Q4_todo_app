@@ -2,10 +2,11 @@
 
 ## Overview
 
-The Todo Full-Stack Web Application uses a modern three-tier architecture:
-1. **Frontend** - Next.js 16+ App Router with TypeScript
-2. **Backend** - FastAPI RESTful API with Python
-3. **Database** - Neon Serverless PostgreSQL (shared by both frontend and backend)
+The Todo Full-Stack Web Application uses a modern multi-tier architecture with AI integration:
+1. **Frontend** - Next.js 16+ App Router with TypeScript + ChatKit Widget
+2. **Backend** - FastAPI RESTful API with Python + AI Agent + MCP Server
+3. **Database** - Neon Serverless PostgreSQL + SQLite (conversation memory)
+4. **AI Layer** - OpenAI Agents SDK + MCP Protocol + OpenAI/Gemini LLMs
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -128,6 +129,10 @@ app/
 │       ├── TaskForm              # Client Component
 │       ├── BulkActions           # Client Component
 │       └── Statistics            # Server Component
+│
+├── chat/                         # NEW: AI Chat interface (Phase III)
+│   └── page.tsx                  # Chat page with ChatKit widget
+│       └── ChatKitWidget         # Client Component (ChatKit integration)
 │
 └── api/                          # API routes
     └── auth/
@@ -452,6 +457,213 @@ CREATE INDEX idx_tasks_due_date ON tasks(due_date);
 │  }                  │
 └─────────────────────┘
 ```
+
+## Phase III: AI Architecture (Conversational Interface)
+
+### AI System Components
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      USER (Browser)                              │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │         ChatKit Widget (@openai/chatkit-react)             │ │
+│  │  - Message input and display                               │ │
+│  │  - Real-time streaming response rendering                  │ │
+│  │  - Conversation history UI                                 │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+              POST /api/chatkit (Server-Sent Events)
+              Authorization: Bearer {jwt_token}
+                            │
+┌───────────────────────────┴─────────────────────────────────────┐
+│                    BACKEND (FastAPI)                             │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  ChatKit Endpoint (routers/chatkit.py)                     │ │
+│  │  - Receives user messages                                  │ │
+│  │  - Streams responses via SSE                               │ │
+│  │  - JWT authentication                                      │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                            │                                     │
+│                            ▼                                     │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  ChatKit Server (services/chatkit_server.py)               │ │
+│  │  - SQLiteSession management                                │ │
+│  │  - User+thread session isolation                           │ │
+│  │  - Automatic conversation history retrieval                │ │
+│  │  - MCP server lifecycle management                         │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                            │                                     │
+│                            ▼                                     │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  TodoAgent (agent_config/todo_agent.py)                    │ │
+│  │  - OpenAI Agents SDK Agent                                 │ │
+│  │  - MCPServerStdio connection                               │ │
+│  │  - System instructions for task management                 │ │
+│  │  - Runner.run_streamed() for token streaming               │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                            │                                     │
+│                            │ Model Factory                       │
+│                            ▼                                     │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  AI Provider (OpenAI / Gemini via LiteLLM)                 │ │
+│  │  - gpt-4o (OpenAI)                                         │ │
+│  │  - gemini-2.0-flash (Gemini via LiteLLM)                  │ │
+│  │  - Configurable via LLM_PROVIDER env variable              │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                            │                                     │
+│                    stdio transport                              │
+│                            ▼                                     │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  MCP Server (mcp_server/tools.py)                          │ │
+│  │  - FastMCP SDK with @mcp.tool() decorators                 │ │
+│  │  - Separate process: python -m mcp_server                  │ │
+│  │  - 5 tools:                                                │ │
+│  │    1. add_task(user_id, title, description)                │ │
+│  │    2. list_tasks(user_id, status)                          │ │
+│  │    3. complete_task(user_id, task_id)                      │ │
+│  │    4. delete_task(user_id, task_id)                        │ │
+│  │    5. update_task(user_id, task_id, title, description)    │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                            │                                     │
+│                            ▼                                     │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  Task Service (services/task_service.py)                   │ │
+│  │  - Shared business logic                                   │ │
+│  │  - Used by both MCP tools and REST endpoints               │ │
+│  │  - User isolation enforcement                              │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+           ┌──────────────────┴──────────────────┐
+           │                                      │
+           ▼                                      ▼
+┌─────────────────────────┐      ┌──────────────────────────────┐
+│  SQLite Database        │      │ Neon PostgreSQL Database      │
+│  (chat_sessions.db)     │      │ - tasks table                 │
+│  - SQLiteSession store  │      │ - conversations table (alt)   │
+│  - Automatic memory     │      │ - messages table (alt)        │
+│  - Per user+thread      │      │ - User isolation              │
+└─────────────────────────┘      └──────────────────────────────┘
+```
+
+### MCP Server Architecture
+
+**Location**: `backend/mcp_server/` (renamed from `mcp/` to avoid package shadowing with installed `mcp` package)
+
+**Key Components**:
+1. **`__init__.py`** - Module initialization
+2. **`__main__.py`** - Entry point for running as module: `python -m mcp_server`
+3. **`tools.py`** - MCP tools implementation using FastMCP
+
+**MCP Tool Pattern**:
+```python
+from mcp.server.fastmcp import FastMCP
+
+# Create MCP server instance
+mcp = FastMCP("task-management-server")
+
+@mcp.tool()
+def add_task(user_id: str, title: str, description: Optional[str] = None) -> dict:
+    """Create a new task for a user."""
+    session = next(get_session())
+    try:
+        task = TaskService.create_task(session, user_id, title, description)
+        return {"task_id": task.id, "status": "created", "title": task.title}
+    finally:
+        session.close()
+```
+
+**Lifecycle Management**:
+- Agent wraps execution in async context manager: `async with mcp_server:`
+- MCPServerStdio handles process spawning and stdio communication
+- Automatic start on context entry, stop on context exit
+
+### Conversation Memory Architecture
+
+**Dual Persistence Strategy**:
+
+1. **ChatKit Endpoint** (`/api/chatkit`):
+   - Uses **SQLiteSession** from OpenAI Agents SDK
+   - Automatic conversation history management
+   - Session ID format: `user_{user_id}_thread_{thread.id}`
+   - Stored in `chat_sessions.db` (SQLite database)
+   - Survives server restarts
+   - No manual history management required
+
+2. **Direct REST Endpoint** (`/api/{user_id}/chat`) - Alternative:
+   - Uses **PostgreSQL database** with Conversation and Message models
+   - Manual conversation history management
+   - Stateless server architecture
+   - Full control over conversation data
+
+**Session Isolation**:
+```python
+# Each user+thread gets unique session
+session_id = f"user_{user_id}_thread_{thread.id}"
+session = SQLiteSession(session_id, "chat_sessions.db")
+
+# Session automatically:
+# 1. Retrieves conversation history
+# 2. Appends new message
+# 3. Stores updated conversation
+```
+
+### AI Agent Request Flow
+
+```
+1. User sends message → ChatKit Widget
+   Message: "Add a task to buy groceries"
+
+2. ChatKit Widget → Backend
+   POST /api/chatkit
+   Authorization: Bearer {jwt_token}
+   {thread_id, user_message}
+
+3. JWT Middleware → Verify token, extract user_id
+
+4. ChatKit Server → Create/load SQLiteSession
+   session_id = f"user_{user_id}_thread_{thread.id}"
+   session = SQLiteSession(session_id, "chat_sessions.db")
+
+   # Add system message with user context (first message only)
+   if not history:
+       system_msg = {"role": "system", "content": f"User's name is {user_name}"}
+       await session.add_items([system_msg])
+
+5. Extract user message string → Pass to Agent
+
+6. Agent lifecycle management:
+   async with mcp_server:  # Connect to MCP server
+       result = Runner.run_streamed(agent, user_message, session=session)
+
+7. MCP Server receives tool call → Execute add_task
+   add_task(user_id, title="Buy groceries", description=None)
+
+8. Task Service → Database
+   TaskService.create_task(session, user_id, task_data)
+
+9. Tool returns result → Agent processes
+
+10. Agent streams response → ChatKit Server → ChatKit Widget
+    SSE stream: "data: {content: 'I'}\n\ndata: {content: "'ve"}\n\n..."
+
+11. SQLiteSession auto-saves conversation for next turn
+```
+
+### Streaming Response Architecture
+
+**Server-Sent Events (SSE)**:
+- Content-Type: `text/event-stream`
+- Token-by-token streaming via `Runner.run_streamed()`
+- Format: `data: {json}\n\n`
+- Completion marker: `data: [DONE]\n\n`
+
+**Benefits**:
+- Real-time response display (< 2 second first token)
+- Native browser support via EventSource API
+- One-way server-to-client (perfect for AI streaming)
+- Auto-reconnect on connection loss
 
 ## Security Architecture
 

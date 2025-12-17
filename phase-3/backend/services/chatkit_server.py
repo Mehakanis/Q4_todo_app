@@ -18,7 +18,7 @@ from chatkit.server import ChatKitServer, ThreadStreamEvent, ThreadMetadata, Use
 from chatkit.agents import AgentContext, stream_agent_response, simple_to_agent_input
 
 from agent_config.todo_agent import create_todo_agent
-from mcp.tools import add_task, list_tasks, complete_task, delete_task, update_task
+from mcp_server.tools import add_task, list_tasks, complete_task, delete_task, update_task
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +37,8 @@ class TaskChatKitServer(ChatKitServer):
         super().__init__(store)
 
         # Create TodoAgent instance
-        todo_agent_instance = create_todo_agent()
-        self.agent: Agent = todo_agent_instance.get_agent()
+        self.todo_agent_instance = create_todo_agent()
+        self.agent: Agent = self.todo_agent_instance.get_agent()
 
         # Store session database path for creating user-specific sessions
         self.session_db_path = session_db_path
@@ -101,9 +101,10 @@ class TaskChatKitServer(ChatKitServer):
         history = await session.get_items()
         if not history:
             # First message - add system context to session
+            # IMPORTANT: user_id is for internal tool calls only - NEVER mention it to the user
             system_message = {
                 "role": "system",
-                "content": f"The user's name is {user_name}. Address them by name when appropriate. The user's ID is {user_id} - use this for all MCP tool calls that require user_id."
+                "content": f"The user's name is {user_name}. Address them by their name when appropriate, but NEVER mention their user ID in any response. The user ID ({user_id}) is ONLY for internal tool calls (like list_tasks, add_task, etc.) and must NEVER appear in your text responses, greetings, task listings, or any user-facing messages. If you see a user ID in your own responses, you are making an error - user IDs should never be visible to users."
             }
             await session.add_items([system_message])
             logger.info(f"Added system message to new session {session_id}")
@@ -127,21 +128,23 @@ class TaskChatKitServer(ChatKitServer):
 
         logger.info(f"User message extracted: {user_message}")
 
-        # Run agent with streaming AND session
-        # IMPORTANT: Pass string input (not list) when using sessions!
-        # The session automatically:
-        # 1. Retrieves conversation history from previous turns (including system message)
-        # 2. Appends the new user message to the context
-        # 3. Stores the conversation for future turns
-        result = Runner.run_streamed(
-            self.agent,
-            user_message,  # String input (required when using session)
-            context=agent_context,
-            session=session,  # Enable conversation memory
-        )
+        # Run agent with streaming AND session within MCP server context
+        # The MCP server must be connected before the agent can use tools
+        async with self.todo_agent_instance.mcp_server:
+            # IMPORTANT: Pass string input (not list) when using sessions!
+            # The session automatically:
+            # 1. Retrieves conversation history from previous turns (including system message)
+            # 2. Appends the new user message to the context
+            # 3. Stores the conversation for future turns
+            result = Runner.run_streamed(
+                self.agent,
+                user_message,  # String input (required when using session)
+                context=agent_context,
+                session=session,  # Enable conversation memory
+            )
 
-        # Stream agent response (widgets are streamed directly by tools)
-        async for event in stream_agent_response(agent_context, result):
-            yield event
+            # Stream agent response (widgets are streamed directly by tools)
+            async for event in stream_agent_response(agent_context, result):
+                yield event
 
         logger.info(f"Completed response for thread {thread.id} with conversation memory")
