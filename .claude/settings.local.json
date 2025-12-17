@@ -13,9 +13,21 @@
       "Bash(git commit:*)",
       "Bash(git rev-parse:*)",
       "Bash(pnpm add:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(uv run python:*)",
+      "mcp__github__get_me"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "better-auth",
+    "context7",
+    "github"
+  ],
+  "enableAllProjectMcpServers": true
 }
