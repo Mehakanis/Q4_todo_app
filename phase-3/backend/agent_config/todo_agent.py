@@ -14,10 +14,12 @@ Architecture:
 import os
 from pathlib import Path
 
-from agents import Agent
+from agents import Agent, settings as agent_settings
 from agents.mcp import MCPServerStdio
+from agents.model_settings import ModelSettings
 
 from agent_config.factory import create_model
+from config import settings
 
 
 # Agent Instructions
@@ -29,8 +31,9 @@ You are a helpful task management assistant. Your role is to help users manage t
 You have access to the following task management tools:
 - add_task: Create new tasks with title and optional description
 - list_tasks: Show tasks (all, pending, or completed)
-- complete_task: Mark tasks as done
-- delete_task: Remove tasks permanently
+- complete_task: Mark a single task as done
+- bulk_update_tasks: Mark multiple tasks as done or delete multiple tasks at once (use this for bulk operations)
+- delete_task: Remove a single task permanently
 - update_task: Modify task title or description
 
 ## Behavior Guidelines
@@ -53,6 +56,14 @@ You have access to the following task management tools:
      * "I finished" / "I finished task X" / "I finished buying groceries"
      * "done with task X" / "task X is done" / "completed task X"
      * "complete task Y" / "finish task Y"
+     * "complete all" / "mark all as done" / "finish all pending tasks"
+   - IMPORTANT: Use bulk_update_tasks for multiple tasks:
+     * When user says "complete all pending tasks" or similar, use bulk_update_tasks(action="complete", filter_status="pending")
+     * This is much more efficient than calling complete_task multiple times
+     * Prevents database bottlenecks and timeouts
+     * Example: "Complete all pending tasks" → bulk_update_tasks(user_id, "complete", "pending")
+   - For single tasks, use complete_task:
+     * If user specifies a single task by ID or title, use complete_task with that specific task_id
    - Identify tasks by ID or title:
      * If user provides task ID (e.g., "task 3"), use that ID directly
      * If user mentions task title (e.g., "buying groceries"), use list_tasks first, then find matching task by title
@@ -65,6 +76,7 @@ You have access to the following task management tools:
      * "Great job! I've marked '[task title]' as complete."
      * "Nice work! Task '[task title]' is now done."
      * "Awesome! '[task title]' has been completed."
+     * For bulk operations: "Excellent! I've marked all [N] pending tasks as complete!"
 
 4. **Task Deletion**
    - When user says delete/remove/cancel, use delete_task
@@ -160,6 +172,11 @@ class TodoAgent:
             The agent connects to MCP server via stdio transport.
             The MCP server must be available as a Python module at mcp.tools.
         """
+        # Disable tracing to improve performance and prevent overhead
+        # Tracing can be enabled via AGENT_TRACING_ENABLED environment variable
+        if not settings.agent_tracing_enabled:
+            agent_settings.tracing_enabled = False
+
         # Create model configuration using factory
         self.model = create_model(provider=provider, model=model)
 
@@ -170,22 +187,28 @@ class TodoAgent:
 
         # Create MCP server connection via stdio
         # This launches the MCP server as a separate process
+        # Timeout set to 30s to prevent "Timed out waiting" errors
         self.mcp_server = MCPServerStdio(
             name="task-management-server",
             params={
                 "command": "python",
                 "args": ["-m", "mcp_server"],
                 "env": os.environ.copy(),  # Pass environment variables
+                "timeout": 30.0,  # Increase timeout from default 5s to 30s
             },
         )
 
         # Create agent with MCP server
         # Tools are now accessed via MCP protocol, not direct imports
+        # ModelSettings disables parallel tool calling to prevent database bottlenecks
         self.agent = Agent(
             name="TodoAgent",
             model=self.model,
             instructions=AGENT_INSTRUCTIONS,
             mcp_servers=[self.mcp_server],
+            model_settings=ModelSettings(
+                parallel_tool_calls=False,  # Disable parallel calls to prevent database locks
+            ),
         )
 
     def get_agent(self) -> Agent:

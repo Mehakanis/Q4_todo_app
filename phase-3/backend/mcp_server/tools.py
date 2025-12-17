@@ -361,3 +361,100 @@ def update_task(
 
     finally:
         session.close()
+
+
+@mcp.tool()
+def bulk_update_tasks(
+    user_id: str,
+    action: Literal["complete", "delete"] = "complete",
+    filter_status: Literal["all", "pending", "completed"] = "pending",
+) -> dict:
+    """
+    Perform bulk operations on multiple tasks at once.
+
+    MCP Tool Contract:
+    - Purpose: Update multiple tasks efficiently in a single operation
+    - Stateless: All state persisted to database
+    - User Isolation: Enforced via user_id parameter
+    - Efficiency: Reduces multiple tool calls to a single database operation
+
+    Args:
+        user_id: User's unique identifier (string UUID from Better Auth)
+        action: Bulk operation to perform (default: "complete")
+            - "complete": Mark all matching tasks as completed
+            - "delete": Delete all matching tasks
+        filter_status: Filter which tasks to update (default: "pending")
+            - "pending": Only incomplete tasks
+            - "completed": Only complete tasks
+            - "all": All tasks
+
+    Returns:
+        dict: Bulk operation result
+            - count (int): Number of tasks updated
+            - action (str): Action performed
+            - affected_tasks (list): IDs of affected tasks
+
+    Example:
+        >>> bulk_update_tasks(user_id="user-123", action="complete", filter_status="pending")
+        {"count": 5, "action": "completed", "affected_tasks": [1, 2, 3, 4, 5]}
+    """
+    from sqlmodel import select, func
+    from models import Task
+
+    # Get database session
+    session = next(get_session())
+
+    try:
+        # Build query to find tasks matching filter
+        statement = select(Task).where(Task.user_id == user_id)
+
+        if filter_status == "pending":
+            statement = statement.where(Task.completed == False)
+        elif filter_status == "completed":
+            statement = statement.where(Task.completed == True)
+
+        # Get affected tasks (for response)
+        tasks_to_update = session.exec(statement).all()
+        affected_task_ids = [task.id for task in tasks_to_update]
+
+        if not tasks_to_update:
+            return {
+                "count": 0,
+                "action": action,
+                "affected_tasks": [],
+                "message": f"No {filter_status} tasks found to {action}",
+            }
+
+        # Perform bulk action
+        if action == "complete":
+            # Mark all matching tasks as completed
+            for task in tasks_to_update:
+                task.completed = True
+            session.add_all(tasks_to_update)
+            session.commit()
+
+            return {
+                "count": len(tasks_to_update),
+                "action": "completed",
+                "affected_tasks": affected_task_ids,
+                "message": f"Marked {len(tasks_to_update)} task(s) as completed",
+            }
+
+        elif action == "delete":
+            # Delete all matching tasks
+            for task in tasks_to_update:
+                session.delete(task)
+            session.commit()
+
+            return {
+                "count": len(tasks_to_update),
+                "action": "deleted",
+                "affected_tasks": affected_task_ids,
+                "message": f"Deleted {len(tasks_to_update)} task(s)",
+            }
+
+        else:
+            raise ValueError(f"Unsupported bulk action: {action}")
+
+    finally:
+        session.close()
