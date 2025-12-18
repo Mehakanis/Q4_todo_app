@@ -312,3 +312,151 @@ FastAPI automatically generates OpenAPI/Swagger documentation:
 - ReDoc: http://localhost:8000/redoc
 
 Access these endpoints after starting the server to explore the API interactively.
+
+## Phase 3 Extension: AI-Powered Chat with Priority Support
+
+### Priority Support (Phase A)
+
+The backend now supports task priority management with automatic NLP detection:
+
+**Priority Levels**: `low`, `medium`, `high`
+
+**Automatic Detection**: Priority is automatically detected from task titles/descriptions:
+- High: "urgent", "critical", "important", "asap", "high priority"
+- Low: "low", "minor", "optional", "when you have time"
+- Medium: default
+
+**New MCP Tools**:
+- `set_priority(user_id, task_id, priority)` - Update task priority
+- `list_tasks_by_priority(user_id, priority, status)` - Filter tasks by priority
+
+**Database Schema**:
+- Tasks table has `priority` column (indexed for fast filtering)
+- Default: "medium"
+
+### Chat History Persistence (Phase B-C)
+
+Conversations and messages are now persisted to the database:
+
+**Conversation Management Endpoints**:
+```
+GET    /api/{user_id}/conversations              # List user's conversations
+GET    /api/{user_id}/conversations/{id}/messages # Get conversation messages
+POST   /api/{user_id}/chat                       # Chat with SSE streaming
+```
+
+**Database Models**:
+- `Conversation`: Stores chat session metadata (id, user_id, title, is_active, created_at, updated_at)
+- `Message`: Stores individual messages (id, conversation_id, user_id, role, content, created_at, expires_at, tool_calls)
+
+**Features**:
+- Stateless request cycle: Each chat request loads history from database
+- User isolation: All queries filter by authenticated user_id
+- Message persistence: User and assistant messages automatically saved
+- Tool call logging: MCP tool invocations stored in message metadata
+
+**Stream Response Format**:
+```json
+{"type": "message", "content": "...", "done": false}
+{"type": "tool_call", "tool": "add_task", "args": {...}}
+{"type": "done", "conversation_id": 1}
+```
+
+### Message Retention Policy (Phase D)
+
+**2-Day Retention**: Messages automatically expire after 2 days
+
+**Cleanup Task**:
+- Endpoint: `POST /api/admin/cleanup/messages`
+- Returns: `{success, deleted_count, timestamp}`
+- Should be called daily by external scheduler (cron, GitHub Actions, etc.)
+
+**Database Implementation**:
+- `expires_at` field automatically set to `now() + 2 days`
+- Indexed for efficient cleanup queries
+- Queries filter `created_at <= expires_at` to only show active messages
+
+**Sample Cron Configuration**:
+```bash
+# Run cleanup daily at 2 AM UTC
+0 2 * * * curl -X POST https://api.example.com/api/admin/cleanup/messages
+```
+
+### Chat History Queries
+
+**User Isolation**:
+All conversation queries enforce user_id verification:
+```python
+statement = select(Conversation).where(
+    Conversation.user_id == user_id  # User isolation
+)
+```
+
+**Message Ordering**:
+Messages ordered by `created_at` (oldest first) for chronological display:
+```python
+statement = select(Message).where(
+    Message.conversation_id == conversation_id,
+    Message.created_at <= Message.expires_at  # Only non-expired
+).order_by(Message.created_at.asc())
+```
+
+### Testing
+
+**Chat History Tests** (`tests/test_chat_history.py`):
+- Conversation management and pagination
+- Message persistence and retrieval
+- User isolation verification
+- 2-day retention policy
+- Cleanup endpoint functionality
+- Error handling and edge cases
+- API response format validation
+
+**Run Tests**:
+```bash
+# Run all tests
+uv run pytest
+
+# Run chat history tests only
+uv run pytest tests/test_chat_history.py -v
+
+# Run specific test
+uv run pytest tests/test_chat_history.py::TestConversationManagement::test_get_user_conversations_empty -v
+```
+
+### Background Tasks
+
+**Message Cleanup** (`tasks/message_cleanup.py`):
+```python
+from tasks.message_cleanup import cleanup_expired_messages
+
+result = cleanup_expired_messages()
+# Returns: {success, deleted_count, timestamp}
+```
+
+### MCP Server Integration
+
+The TodoAgent now includes priority detection:
+- Automatically detects priority keywords from task descriptions
+- Falls back to "medium" if no keywords match
+- Can be overridden with explicit priority parameter
+
+**Example Conversation**:
+```
+User: "Add an urgent task to fix the bug"
+Agent: Detects "urgent" → creates task with priority="high"
+
+User: "Create a low priority cleanup task"
+Agent: Detects "low" → creates task with priority="low"
+```
+
+### Future Enhancements
+
+- Conversation archiving (mark inactive)
+- Message editing and deletion
+- Conversation search/filtering
+- Message search across all conversations
+- Batch operations on multiple messages
+- Message export/import
+- Conversation sharing
+- Real-time WebSocket support (replace SSE)

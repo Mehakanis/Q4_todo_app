@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from alembic import context
 
 # Import SQLModel models (needed for alembic to detect model changes)
-from models import Task  # noqa: F401, E402  # User model removed - Better Auth manages users
+from models import Task, Conversation, Message  # noqa: F401, E402  # User model removed - Better Auth manages users
 from sqlmodel import SQLModel  # noqa: E402
 
 # Load environment variables from .env file

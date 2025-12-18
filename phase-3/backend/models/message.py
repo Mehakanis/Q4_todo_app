@@ -5,7 +5,7 @@ This module defines the Message database model for storing
 individual messages within conversations.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from sqlalchemy import JSON
@@ -44,8 +44,13 @@ class Message(SQLModel, table=True):
     # Tool Calls (JSON) - only for "assistant" role
     tool_calls: Optional[dict] = Field(default=None, sa_column=Column(JSON))
 
-    # Timestamp
+    # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True, nullable=False)
+    expires_at: datetime = Field(
+        default_factory=lambda: datetime.utcnow() + timedelta(days=2),
+        nullable=False,
+        index=True,
+    )  # 2-day retention policy
 
     # Validation Rules (enforced at service layer):
     # - conversation_id must exist in conversations table
@@ -53,3 +58,4 @@ class Message(SQLModel, table=True):
     # - role must be in ["user", "assistant", "system"]
     # - content must be non-empty
     # - tool_calls must be valid JSON (assistant role only)
+    # - expires_at automatically set to 2 days from creation

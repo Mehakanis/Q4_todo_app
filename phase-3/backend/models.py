@@ -1,11 +1,11 @@
 """
 SQLModel database models for the Todo application.
 
-This module defines the database schema for Users and Tasks.
+This module defines the database schema for Users, Tasks, Conversations, and ChatMessages.
 """
 
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timedelta
+from typing import Literal, Optional
 from uuid import uuid4
 
 from sqlmodel import Column, Field, JSON, SQLModel
@@ -72,3 +72,5 @@ class Task(SQLModel, table=True):
     updated_at: datetime = Field(
         default_factory=datetime.utcnow, nullable=False, sa_column_kwargs={"onupdate": datetime.utcnow}
     )
+
+
