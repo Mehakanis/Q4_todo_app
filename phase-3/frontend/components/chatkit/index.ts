@@ -5,3 +5,5 @@
  */
 
 export { default as ChatKitWidget } from "./ChatKitWidget";
+export { ConversationHistory } from "./ConversationHistory";
+export { MessageDisplay } from "./MessageDisplay";

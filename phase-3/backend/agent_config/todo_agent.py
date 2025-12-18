@@ -16,8 +16,7 @@ from pathlib import Path
 
 from agents import Agent
 from agents.mcp import MCPServerStdio
-
-from agent_config.factory import create_model
+from agents.model_settings import ModelSettings
 
 
 # Agent Instructions
@@ -27,11 +26,14 @@ You are a helpful task management assistant. Your role is to help users manage t
 ## Your Capabilities
 
 You have access to the following task management tools:
-- add_task: Create new tasks with title and optional description
+- add_task: Create new tasks with title, optional description, and optional priority (auto-detects priority from text)
 - list_tasks: Show tasks (all, pending, or completed)
-- complete_task: Mark tasks as done
-- delete_task: Remove tasks permanently
-- update_task: Modify task title or description
+- complete_task: Mark a single task as done
+- bulk_update_tasks: Mark multiple tasks as done or delete multiple tasks at once (use this for bulk operations)
+- delete_task: Remove a single task permanently
+- update_task: Modify task title, description, or priority
+- set_priority: Update a task's priority level (low, medium, high)
+- list_tasks_by_priority: Show tasks filtered by priority level with optional status filter
 
 ## Behavior Guidelines
 
@@ -40,6 +42,18 @@ You have access to the following task management tools:
    - Extract clear, actionable titles from user messages
    - Capture additional context in description field
    - Confirm task creation with a friendly message
+
+1b. **Priority Handling**
+   - AUTOMATIC DETECTION: add_task automatically detects priority from keywords like:
+     * High priority: "high", "urgent", "critical", "important", "ASAP"
+     * Low priority: "low", "minor", "optional", "when you have time"
+     * Medium priority: Default if no keywords found
+   - EXPLICIT SETTING: If user explicitly specifies priority (e.g., "high priority task"), it's included in the detection
+   - PRIORITY UPDATES: Use set_priority to change a task's priority after creation
+     * Example: "Make task 5 high priority" → set_priority(user_id, 5, "high")
+   - PRIORITY FILTERING: Use list_tasks_by_priority to show tasks by priority
+     * Example: "Show me all high priority tasks" → list_tasks_by_priority(user_id, "high")
+     * Example: "What low priority pending tasks do I have?" → list_tasks_by_priority(user_id, "low", "pending")
 
 2. **Task Listing**
    - When user asks to see/show/list tasks, use list_tasks
@@ -53,6 +67,14 @@ You have access to the following task management tools:
      * "I finished" / "I finished task X" / "I finished buying groceries"
      * "done with task X" / "task X is done" / "completed task X"
      * "complete task Y" / "finish task Y"
+     * "complete all" / "mark all as done" / "finish all pending tasks"
+   - IMPORTANT: Use bulk_update_tasks for multiple tasks:
+     * When user says "complete all pending tasks" or similar, use bulk_update_tasks(action="complete", filter_status="pending")
+     * This is much more efficient than calling complete_task multiple times
+     * Prevents database bottlenecks and timeouts
+     * Example: "Complete all pending tasks" → bulk_update_tasks(user_id, "complete", "pending")
+   - For single tasks, use complete_task:
+     * If user specifies a single task by ID or title, use complete_task with that specific task_id
    - Identify tasks by ID or title:
      * If user provides task ID (e.g., "task 3"), use that ID directly
      * If user mentions task title (e.g., "buying groceries"), use list_tasks first, then find matching task by title
@@ -65,6 +87,7 @@ You have access to the following task management tools:
      * "Great job! I've marked '[task title]' as complete."
      * "Nice work! Task '[task title]' is now done."
      * "Awesome! '[task title]' has been completed."
+     * For bulk operations: "Excellent! I've marked all [N] pending tasks as complete!"
 
 4. **Task Deletion**
    - When user says delete/remove/cancel, use delete_task
@@ -142,8 +165,8 @@ class TodoAgent:
         Initialize TodoAgent with AI model and MCP server connection.
 
         Args:
-            provider: Override LLM_PROVIDER env var ("openai" | "gemini")
-            model: Override model name (e.g., "gpt-4o", "gemini-2.5-flash")
+            provider: Override LLM_PROVIDER env var ("openai" | "gemini" | "groq" | "openrouter")
+            model: Override model name (e.g., "gpt-4o", "gemini-2.5-flash", "llama-3.3-70b-versatile", "openai/gpt-oss-20b:free")
 
         Raises:
             ValueError: If provider not supported or API key missing
@@ -153,12 +176,18 @@ class TodoAgent:
             >>> agent = TodoAgent()
             >>> # Gemini agent
             >>> agent = TodoAgent(provider="gemini")
+            >>> # Groq agent
+            >>> agent = TodoAgent(provider="groq")
+            >>> # OpenRouter agent
+            >>> agent = TodoAgent(provider="openrouter", model="openai/gpt-oss-20b:free")
 
         Note:
             The agent connects to MCP server via stdio transport.
             The MCP server must be available as a Python module at mcp.tools.
         """
         # Create model configuration using factory
+        from agent_config.factory import create_model
+
         self.model = create_model(provider=provider, model=model)
 
         # Get path to MCP server module
@@ -168,6 +197,9 @@ class TodoAgent:
 
         # Create MCP server connection via stdio
         # This launches the MCP server as a separate process
+        # client_session_timeout_seconds: MCP protocol ClientSession read timeout
+        # Default: 5 seconds → Setting to 30 seconds for database operations
+        # This controls the timeout for MCP tool calls and initialization
         self.mcp_server = MCPServerStdio(
             name="task-management-server",
             params={
@@ -175,15 +207,20 @@ class TodoAgent:
                 "args": ["-m", "mcp_server"],
                 "env": os.environ.copy(),  # Pass environment variables
             },
+            client_session_timeout_seconds=30.0,  # MCP ClientSession timeout (increased from default 5s)
         )
 
         # Create agent with MCP server
         # Tools are now accessed via MCP protocol, not direct imports
+        # ModelSettings disables parallel tool calling to prevent database bottlenecks
         self.agent = Agent(
             name="TodoAgent",
             model=self.model,
             instructions=AGENT_INSTRUCTIONS,
             mcp_servers=[self.mcp_server],
+            model_settings=ModelSettings(
+                parallel_tool_calls=False,  # Disable parallel calls to prevent database locks
+            ),
         )
 
     def get_agent(self) -> Agent:
@@ -218,7 +255,7 @@ def create_todo_agent(provider: str | None = None, model: str | None = None) -> 
     explicitly instantiating the class.
 
     Args:
-        provider: Override LLM_PROVIDER env var ("openai" | "gemini")
+        provider: Override LLM_PROVIDER env var ("openai" | "gemini" | "groq" | "openrouter")
         model: Override model name
 
     Returns:
@@ -227,6 +264,10 @@ def create_todo_agent(provider: str | None = None, model: str | None = None) -> 
     Example:
         >>> agent = create_todo_agent()
         >>> # Or with explicit provider
-        >>> agent = create_todo_agent(provider="gemini", model="gemini-1.5-pro")
+        >>> agent = create_todo_agent(provider="gemini", model="gemini-2.5-flash")
+        >>> # Or with Groq
+        >>> agent = create_todo_agent(provider="groq", model="llama-3.3-70b-versatile")
+        >>> # Or with OpenRouter
+        >>> agent = create_todo_agent(provider="openrouter", model="openai/gpt-oss-20b:free")
     """
     return TodoAgent(provider=provider, model=model)

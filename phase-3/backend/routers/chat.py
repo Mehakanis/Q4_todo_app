@@ -412,7 +412,7 @@ async def chat_endpoint(
         HTTPException: 404 if conversation not found
     """
     # 1. Verify user_id from JWT matches URL path
-    if current_user.get("id") != user_id:
+    if current_user.get("user_id") != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User ID mismatch: cannot access other users' conversations"
@@ -484,7 +484,7 @@ async def get_user_conversations_endpoint(
         HTTPException: 403 if user_id doesn't match JWT token
     """
     # Verify user_id matches JWT token
-    if current_user.get("id") != user_id:
+    if current_user.get("user_id") != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User ID mismatch: cannot access other users' conversations"
@@ -510,6 +510,8 @@ async def get_user_conversations_endpoint(
             "conversations": [
                 {
                     "id": conv.id,
+                    "title": conv.title,
+                    "is_active": conv.is_active,
                     "created_at": conv.created_at.isoformat(),
                     "updated_at": conv.updated_at.isoformat(),
                 }
@@ -557,7 +559,7 @@ async def get_conversation_messages_endpoint(
         HTTPException: 404 if conversation not found
     """
     # Verify user_id matches JWT token
-    if current_user.get("id") != user_id:
+    if current_user.get("user_id") != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User ID mismatch: cannot access other users' conversations"
@@ -587,4 +589,38 @@ async def get_conversation_messages_endpoint(
             ],
             "count": len(messages),
         },
+    }
+
+
+@router.post("/admin/cleanup/messages", tags=["admin"])
+async def trigger_message_cleanup():
+    """
+    Trigger cleanup of expired messages (2-day retention policy).
+
+    This endpoint runs the message cleanup job immediately.
+    Should be called periodically (e.g., daily at off-peak hours) by an external scheduler.
+
+    **Note:** This endpoint has no authentication requirement to allow external schedulers
+    to trigger it. In production, consider adding API key authentication or IP whitelisting.
+
+    Returns:
+        dict: Cleanup statistics including:
+            - deleted_count: Number of messages deleted
+            - timestamp: When cleanup was executed
+
+    Example:
+        curl -X POST "http://localhost:8000/api/admin/cleanup/messages"
+    """
+    from tasks.message_cleanup import cleanup_expired_messages
+
+    result = cleanup_expired_messages()
+    status_code = 200 if result.get("success", False) else 500
+
+    return {
+        "success": result.get("success", False),
+        "data": {
+            "deleted_count": result.get("deleted_count", 0),
+            "timestamp": result.get("timestamp"),
+        },
+        "error": result.get("error") if not result.get("success", False) else None,
     }

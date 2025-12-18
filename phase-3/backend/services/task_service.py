@@ -229,8 +229,8 @@ class TaskService:
         # Get task with user isolation verification
         task = TaskService.get_task_by_id(db, user_id, task_id)
 
-        # Update only provided fields
-        update_data = task_data.model_dump(exclude_unset=True)
+        # Update only provided fields (exclude_unset=True excludes unset fields, exclude_none=True excludes None values)
+        update_data = task_data.model_dump(exclude_unset=True, exclude_none=True)
         for field, value in update_data.items():
             setattr(task, field, value)
 
