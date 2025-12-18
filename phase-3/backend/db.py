@@ -6,6 +6,7 @@ and connection pooling for the Todo application.
 """
 
 import os
+import re
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -73,16 +74,36 @@ else:
 # Create asynchronous engine for application (only for PostgreSQL)
 if not IS_TEST and DATABASE_URL != "sqlite:///:memory:":
     # Convert postgresql:// to postgresql+asyncpg:// for async support
+    # Strip query parameters from URL (asyncpg doesn't accept them in URL, they go in connect_args)
     async_database_url = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    # Parse and remove query parameters from URL
+    connect_args = {}
+    if "?" in async_database_url:
+        base_url, query_string = async_database_url.split("?", 1)
+        async_database_url = base_url
+
+        # Parse query parameters
+        for param in query_string.split("&"):
+            if "=" in param:
+                key, value = param.split("=", 1)
+                # asyncpg uses 'ssl' parameter (boolean), not 'sslmode' (string)
+                if key == "sslmode":
+                    connect_args["ssl"] = value in ("require", "prefer")
+                # Skip other Neon-specific parameters that asyncpg doesn't use
 
     # Use same SQL_ECHO setting for async engine
     sql_echo = os.getenv("SQL_ECHO", "false").lower() in ("true", "1", "yes")
+
+    # Create async engine with proper asyncpg configuration
+    # Reference: https://docs.sqlalchemy.org/en/20/dialects/postgresql.html
     async_engine = create_async_engine(
         async_database_url,
         echo=sql_echo,
         pool_size=10,
         max_overflow=20,
         pool_pre_ping=True,
+        connect_args=connect_args if connect_args else {"ssl": True},
     )
 
     # Create async session maker

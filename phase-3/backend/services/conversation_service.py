@@ -61,11 +61,17 @@ async def get_or_create_conversation(
         return conversation
 
     else:
-        # Create new conversation
+        # Create new conversation with auto-generated title
+        from datetime import datetime as dt
+        now = dt.utcnow()
+        title = f"Conversation {now.strftime('%Y-%m-%d %H:%M')}"
+
         new_conversation = Conversation(
             user_id=user_id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            title=title,
+            is_active=True,
+            created_at=now,
+            updated_at=now
         )
         session.add(new_conversation)
         await session.commit()

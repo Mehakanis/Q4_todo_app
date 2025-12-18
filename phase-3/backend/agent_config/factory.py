@@ -15,7 +15,7 @@ Environment variables:
 - GEMINI_API_KEY: Gemini API key
 - GROQ_API_KEY: Groq API key
 - OPENAI_DEFAULT_MODEL: Model name for OpenAI (default: "gpt-4o-mini")
-- GEMINI_DEFAULT_MODEL: Model name for Gemini (default: "gemini-2.0-flash")
+- GEMINI_DEFAULT_MODEL: Model name for Gemini (default: "gemini-2.5-flash")
 - GROQ_DEFAULT_MODEL: Model name for Groq (default: "llama-3.3-70b-versatile")
 """
 
@@ -25,6 +25,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 from agents import OpenAIChatCompletionsModel
 from openai import AsyncOpenAI
+
+# Disable OpenAI telemetry/tracing for faster responses
+# This prevents the SDK from trying to send traces to api.openai.com
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+os.environ.setdefault("OTEL_TRACES_EXPORTER", "none")
+os.environ.setdefault("OTEL_METRICS_EXPORTER", "none")
 
 # Load environment variables from .env file
 # This ensures the .env file is loaded even if imported before main.py
