@@ -30,7 +30,9 @@
       "Bash(git push:*)",
       "Bash(powershell -ExecutionPolicy Bypass -File:*)",
       "Bash(kubectl rollout:*)",
-      "Bash(kubectl delete:*)"
+      "Bash(kubectl delete:*)",
+      "Bash(minikube status:*)",
+      "Bash(docker ai:*)"
     ],
     "deny": [],
     "ask": []

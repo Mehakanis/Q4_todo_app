@@ -144,27 +144,27 @@ This is a web application deployment project:
 
 ### Implementation for User Story 4
 
-- [ ] T038 [P] [US4] Create AI DevOps tools documentation docs/ai-devops-tools.md with installation and usage sections
-- [ ] T039 [P] [US4] Document kubectl-ai in docs/ai-devops-tools.md:
+- [X] T038 [P] [US4] Create AI DevOps tools documentation docs/ai-devops-tools.md with installation and usage sections
+- [X] T039 [P] [US4] Document kubectl-ai in docs/ai-devops-tools.md:
   - Installation: curl -sL https://kubectl.ai/install | sh
   - Example: kubectl-ai "show me all pods that are not running"
   - Example: kubectl-ai "get logs from the backend pod"
   - Example: kubectl-ai "describe the frontend service"
-- [ ] T040 [P] [US4] Document kagent in docs/ai-devops-tools.md:
+- [X] T040 [P] [US4] Document kagent in docs/ai-devops-tools.md:
   - Installation instructions (link to official guide)
   - Example: kagent diagnose pod <pod-name>
   - Example: kagent troubleshoot deployment todo-backend
   - Common troubleshooting scenarios
-- [ ] T041 [P] [US4] Document Docker AI in docs/ai-devops-tools.md:
+- [X] T041 [P] [US4] Document Docker AI in docs/ai-devops-tools.md:
   - Available in Docker Desktop
   - Example: docker build . --tag todo-frontend:latest --help (AI suggestions in output)
   - Image optimization suggestions
   - Security best practices
-- [ ] T042 [US4] Add troubleshooting cheat sheet to docs/ai-devops-tools.md with common kubectl commands and AI tool equivalents
-- [ ] T043 [US4] Test kubectl-ai examples work (if installed) and provide useful output
-- [ ] T044 [US4] Add link to docs/ai-devops-tools.md in main README.md under "AI DevOps Tools" section
+- [X] T042 [US4] Add troubleshooting cheat sheet to docs/ai-devops-tools.md with common kubectl commands and AI tool equivalents
+- [X] T043 [US4] Test kubectl-ai examples work (if installed) and provide useful output
+- [X] T044 [US4] Add link to docs/ai-devops-tools.md in main README.md under "AI DevOps Tools" section
 
-**Checkpoint**: AI DevOps tools documented with working examples, developers can use AI assistance for Kubernetes operations and troubleshooting.
+**Checkpoint**: AI DevOps tools documented with working examples, developers can use AI assistance for Kubernetes operations and troubleshooting. ✅ COMPLETE
 
 ---
 
@@ -176,32 +176,32 @@ This is a web application deployment project:
 
 ### Implementation for User Story 5
 
-- [ ] T045 [US5] Create deployment script scripts/deploy.sh with shebang #!/bin/bash and set -e for error handling
-- [ ] T046 [US5] Add prerequisite validation to scripts/deploy.sh:
+- [X] T045 [US5] Create deployment script scripts/deploy.sh with shebang #!/bin/bash and set -e for error handling
+- [X] T046 [US5] Add prerequisite validation to scripts/deploy.sh:
   - command -v minikube || exit 1 with error message
   - command -v helm || exit 1 with error message
   - command -v docker || exit 1 with error message
   - command -v kubectl || exit 1 with error message
-- [ ] T047 [US5] Add Minikube start logic to scripts/deploy.sh: minikube status || minikube start
-- [ ] T048 [US5] Add Docker daemon configuration to scripts/deploy.sh: eval $(minikube docker-env) with verification
-- [ ] T049 [US5] Add image building logic to scripts/deploy.sh:
+- [X] T047 [US5] Add Minikube start logic to scripts/deploy.sh: minikube status || minikube start
+- [X] T048 [US5] Add Docker daemon configuration to scripts/deploy.sh: eval $(minikube docker-env) with verification
+- [X] T049 [US5] Add image building logic to scripts/deploy.sh:
   - docker build -t todo-frontend:latest ./frontend
   - docker build -t todo-backend:latest ./backend
   - Verify images built successfully: docker images | grep todo
-- [ ] T050 [US5] Add Helm installation logic to scripts/deploy.sh:
+- [X] T050 [US5] Add Helm installation logic to scripts/deploy.sh:
   - helm upgrade --install todo-app ./k8s/todo-app --create-namespace --namespace todo --wait --timeout 10m
   - Include --set for required secrets (with placeholder values or env vars)
-- [ ] T051 [US5] Add pod readiness verification to scripts/deploy.sh: kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=todo-app -n todo --timeout=120s
-- [ ] T052 [US5] Add deployment success output to scripts/deploy.sh:
+- [X] T051 [US5] Add pod readiness verification to scripts/deploy.sh: kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=todo-app -n todo --timeout=120s
+- [X] T052 [US5] Add deployment success output to scripts/deploy.sh:
   - echo "Frontend: http://$(minikube ip):30300"
   - echo "Backend health: http://$(minikube ip):$(kubectl get svc todo-backend -n todo -o jsonpath='{.spec.ports[0].port}')/health"
   - kubectl get all -n todo
-- [ ] T053 [US5] Make scripts/deploy.sh executable: chmod +x scripts/deploy.sh
-- [ ] T054 [US5] Test deployment script on fresh Minikube cluster: minikube delete && time ./scripts/deploy.sh (should complete <10 minutes)
-- [ ] T055 [US5] Test script idempotency: run ./scripts/deploy.sh twice, second run should update existing deployment without errors
-- [ ] T056 [US5] Add deployment script documentation to README.md with usage instructions and required environment variables
+- [X] T053 [US5] Make scripts/deploy.sh executable: chmod +x scripts/deploy.sh
+- [X] T054 [US5] Test deployment script on fresh Minikube cluster: minikube delete && time ./scripts/deploy.sh (should complete <10 minutes)
+- [X] T055 [US5] Test script idempotency: run ./scripts/deploy.sh twice, second run should update existing deployment without errors
+- [X] T056 [US5] Add deployment script documentation to README.md with usage instructions and required environment variables
 
-**Checkpoint**: One-command deployment script works end-to-end, automates entire workflow from prerequisites to deployment verification, completes in under 10 minutes.
+**Checkpoint**: One-command deployment script works end-to-end, automates entire workflow from prerequisites to deployment verification, completes in under 10 minutes. ✅ COMPLETE
 
 ---
 
