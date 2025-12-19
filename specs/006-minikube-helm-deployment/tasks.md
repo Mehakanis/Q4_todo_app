@@ -85,10 +85,10 @@ This is a web application deployment project:
   - Resource limits: memory 1Gi, cpu 1000m
 - [X] T016 [US1] Create frontend Service manifest k8s/todo-app/templates/service-frontend.yaml with type: NodePort, port: 3000, targetPort: 3000, nodePort: 30300
 - [X] T017 [US1] Create backend Service manifest k8s/todo-app/templates/service-backend.yaml with type: ClusterIP, port: 8000, targetPort: 8000
-- [ ] T018 [US1] Manually test deployment: start minikube, eval $(minikube docker-env), build images, helm install todo-app ./k8s/todo-app --set secrets values (Ready for testing - use ./scripts/deploy.sh or ./scripts/deploy.ps1)
-- [ ] T019 [US1] Verify pods reach Ready state within 2 minutes using kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=todo-app --timeout=120s
-- [ ] T020 [US1] Verify frontend accessible via minikube service todo-frontend -n todo and test login/task creation/chat functionality
-- [ ] T021 [US1] Verify backend ClusterIP service accessible from frontend pods using kubectl exec to curl http://todo-backend:8000/health
+- [X] T018 [US1] Manually test deployment: start minikube, eval $(minikube docker-env), build images, helm install todo-app ./k8s/todo-app --set secrets values (Ready for testing - use ./scripts/deploy.sh or ./scripts/deploy.ps1)
+- [X] T019 [US1] Verify pods reach Ready state within 2 minutes using kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=todo-app --timeout=120s
+- [X] T020 [US1] Verify frontend accessible via minikube service todo-frontend -n todo and test login/task creation/chat functionality
+- [X] T021 [US1] Verify backend ClusterIP service accessible from frontend pods using kubectl exec to curl http://todo-backend:8000/health
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently. Application deployed to Minikube, all pods running, frontend accessible via NodePort, all Phase 3 features working. ⚠️ READY FOR TESTING - Core implementation complete, remaining tasks are validation/testing
 
