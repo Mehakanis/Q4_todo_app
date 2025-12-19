@@ -57,6 +57,20 @@ spec:
               name: {{ include "todo-app.fullname" . }}-secrets
               key: GEMINI_API_KEY
         {{- end }}
+        {{- if .Values.secrets.groqApiKey }}
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "todo-app.fullname" . }}-secrets
+              key: GROQ_API_KEY
+        {{- end }}
+        {{- if .Values.secrets.openrouterApiKey }}
+        - name: OPENROUTER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "todo-app.fullname" . }}-secrets
+              key: OPENROUTER_API_KEY
+        {{- end }}
         livenessProbe:
           httpGet:
             path: {{ .Values.backend.livenessProbe.httpGet.path }}

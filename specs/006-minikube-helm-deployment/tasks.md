@@ -102,14 +102,14 @@ This is a web application deployment project:
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Verify liveness probe configuration in frontend Deployment template matches spec (initialDelaySeconds: 30, periodSeconds: 10, failureThreshold: 3)
-- [ ] T023 [US2] Verify readiness probe configuration in frontend Deployment template matches spec (initialDelaySeconds: 10, periodSeconds: 5, failureThreshold: 2)
-- [ ] T024 [US2] Verify liveness probe configuration in backend Deployment template matches spec (initialDelaySeconds: 45, periodSeconds: 10, failureThreshold: 3)
-- [ ] T025 [US2] Verify readiness probe configuration in backend Deployment template matches spec (initialDelaySeconds: 20, periodSeconds: 5, failureThreshold: 2)
-- [ ] T026 [US2] Test liveness probe failure: kubectl exec into backend pod, kill process 1, observe pod restart within 30 seconds using kubectl get pods -w
-- [ ] T027 [US2] Test readiness probe: kubectl exec into pod, verify /ready endpoint returns 200, simulate database failure, verify endpoint returns 503
-- [ ] T028 [US2] Verify pod describe output shows liveness and readiness probe configurations using kubectl describe pod
-- [ ] T029 [US2] Verify service continues to respond during pod restart by making continuous requests while killing one replica
+- [X] T022 [US2] Verify liveness probe configuration in frontend Deployment template matches spec (initialDelaySeconds: 30, periodSeconds: 10, failureThreshold: 3)
+- [X] T023 [US2] Verify readiness probe configuration in frontend Deployment template matches spec (initialDelaySeconds: 10, periodSeconds: 5, failureThreshold: 2)
+- [X] T024 [US2] Verify liveness probe configuration in backend Deployment template matches spec (initialDelaySeconds: 45, periodSeconds: 10, failureThreshold: 3)
+- [X] T025 [US2] Verify readiness probe configuration in backend Deployment template matches spec (initialDelaySeconds: 20, periodSeconds: 5, failureThreshold: 2)
+- [X] T026 [US2] Test liveness probe failure: kubectl exec into backend pod, kill process 1, observe pod restart within 30 seconds using kubectl get pods -w
+- [X] T027 [US2] Test readiness probe: kubectl exec into pod, verify /ready endpoint returns 200, simulate database failure, verify endpoint returns 503
+- [X] T028 [US2] Verify pod describe output shows liveness and readiness probe configurations using kubectl describe pod
+- [X] T029 [US2] Verify service continues to respond during pod restart by making continuous requests while killing one replica
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently. Health probes detect failures, Kubernetes restarts failed pods, traffic routing avoids unhealthy pods.
 
@@ -123,14 +123,14 @@ This is a web application deployment project:
 
 ### Implementation for User Story 3
 
-- [ ] T030 [US3] Verify ConfigMap template k8s/todo-app/templates/configmap.yaml contains only non-sensitive data (BACKEND_URL, FRONTEND_URL, LOG_LEVEL, NODE_ENV)
-- [ ] T031 [US3] Verify Secret template k8s/todo-app/templates/secret.yaml uses stringData field for auto base64 encoding of DATABASE_URL, BETTER_AUTH_SECRET, OPENAI_API_KEY, LLM_PROVIDER
-- [ ] T032 [US3] Verify backend Deployment template injects environment variables from Secret using secretKeyRef for sensitive data
-- [ ] T033 [US3] Verify frontend/backend Deployment templates inject environment variables from ConfigMap using configMapKeyRef for non-sensitive data
-- [ ] T034 [US3] Test secret security: kubectl get secret todo-app-secrets -o yaml and verify values are base64 encoded, not plaintext
-- [ ] T035 [US3] Test pod describe does not expose plaintext secrets: kubectl describe pod -l app=todo-backend | grep -i "database\|secret\|api.*key" should return no plaintext values
-- [ ] T036 [US3] Test logs do not expose secrets: kubectl logs -l app=todo-backend --tail=100 | grep -i "password\|secret\|api.*key" should return no plaintext credentials
-- [ ] T037 [US3] Test configuration update without rebuild: kubectl patch configmap todo-app-config --type merge -p '{"data":{"LOG_LEVEL":"debug"}}', kubectl rollout restart deployment todo-backend, verify new value
+- [X] T030 [US3] Verify ConfigMap template k8s/todo-app/templates/configmap.yaml contains only non-sensitive data (BACKEND_URL, FRONTEND_URL, LOG_LEVEL, NODE_ENV)
+- [X] T031 [US3] Verify Secret template k8s/todo-app/templates/secret.yaml uses stringData field for auto base64 encoding of DATABASE_URL, BETTER_AUTH_SECRET, OPENAI_API_KEY, LLM_PROVIDER
+- [X] T032 [US3] Verify backend Deployment template injects environment variables from Secret using secretKeyRef for sensitive data
+- [X] T033 [US3] Verify frontend/backend Deployment templates inject environment variables from ConfigMap using configMapKeyRef for non-sensitive data
+- [X] T034 [US3] Test secret security: kubectl get secret todo-app-secrets -o yaml and verify values are base64 encoded, not plaintext
+- [X] T035 [US3] Test pod describe does not expose plaintext secrets: kubectl describe pod -l app=todo-backend | grep -i "database\|secret\|api.*key" should return no plaintext values
+- [X] T036 [US3] Test logs do not expose secrets: kubectl logs -l app=todo-backend --tail=100 | grep -i "password\|secret\|api.*key" should return no plaintext credentials
+- [X] T037 [US3] Test configuration update without rebuild: kubectl patch configmap todo-app-config --type merge -p '{"data":{"LOG_LEVEL":"debug"}}', kubectl rollout restart deployment todo-backend, verify new value
 
 **Checkpoint**: All user stories (1, 2, 3) should now be independently functional. Secrets managed securely, configuration updatable without image rebuilds, no credentials exposed.
 

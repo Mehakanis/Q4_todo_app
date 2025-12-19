@@ -132,7 +132,11 @@ secrets:
   betterAuthSecret: "PLACEHOLDER_BETTER_AUTH_SECRET"
   # openaiApiKey is the OpenAI API key for AI chatbot
   openaiApiKey: "PLACEHOLDER_OPENAI_API_KEY"
-  # llmProvider is the LLM provider (openai, openrouter, gemini)
+  # llmProvider is the LLM provider (openai, openrouter, gemini, groq)
   llmProvider: "openai"
-  # geminiApiKey is the Google Gemini API key (optional)
+  # geminiApiKey is the Google Gemini API key (optional, only if using Gemini)
   geminiApiKey: ""
+  # groqApiKey is the Groq API key (optional, only if using Groq)
+  groqApiKey: ""
+  # openrouterApiKey is the OpenRouter API key (optional, only if using OpenRouter)
+  openrouterApiKey: ""
