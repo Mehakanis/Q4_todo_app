@@ -1,0 +1,39 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+  namespace: default
+spec:
+  type: state.postgresql
+  version: v1
+  metadata:
+    # PostgreSQL connection configuration
+    - name: connectionString
+      secretKeyRef:
+        name: database-credentials
+        key: statestore-connection-string
+
+    # Table configuration
+    - name: tableName
+      value: "dapr_state"  # Dedicated table for Dapr state (NOT tasks table)
+
+    # State Store ONLY for conversation history (per Clarification #4)
+    # Tasks are stored directly in tasks table via SQLModel
+    # No task caching in State Store (avoids consistency issues)
+
+    # Performance tuning
+    - name: maxConns
+      value: "10"  # Max connections to database
+    - name: connMaxIdleTime
+      value: "5m"  # Close idle connections after 5 minutes
+
+    # TTL configuration
+    - name: cleanupIntervalInSeconds
+      value: "3600"  # Clean up expired state every hour
+
+    # Actor state configuration (optional for future use)
+    - name: actorStateStore
+      value: "true"
+
+scopes:
+  - backend  # Only backend uses State Store for conversation history

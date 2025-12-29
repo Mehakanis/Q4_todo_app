@@ -1,0 +1,84 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: dapr-config
+  namespace: default
+spec:
+  # Distributed tracing configuration
+  tracing:
+    samplingRate: "1"  # 100% sampling for development (reduce to 0.1 for production)
+    zipkin:
+      endpointAddress: "http://zipkin:9411/api/v2/spans"
+    # Alternative: Use Jaeger
+    # jaeger:
+    #   endpointAddress: "http://jaeger:14268/api/traces"
+
+  # Metrics configuration
+  metric:
+    enabled: true
+
+  # mTLS configuration (for service-to-service communication)
+  mtls:
+    enabled: true  # Enable mTLS for production (disable for Minikube local dev)
+    workloadCertTTL: "24h"
+    allowedClockSkew: "15m"
+    # Sentry configuration (certificate authority)
+    # sentryAddress: "dapr-sentry.dapr-system.svc.cluster.local:443"
+
+  # Access control policies (optional)
+  accessControl:
+    defaultAction: "allow"  # Allow all by default (use "deny" for production)
+    trustDomain: "public"
+    # policies:
+    #   - appId: backend
+    #     defaultAction: "allow"
+    #     operations:
+    #       - name: /api/*
+    #         httpVerb: ["GET", "POST", "PUT", "DELETE"]
+    #         action: "allow"
+
+  # Secrets configuration
+  secrets:
+    scopes:
+      - storeName: kubernetes-secrets
+        defaultAccess: allow
+        allowedSecrets: ["database-credentials", "kafka-credentials", "smtp-credentials"]
+      - storeName: oci-vault
+        defaultAccess: allow
+        allowedSecrets: ["database-credentials", "kafka-credentials", "smtp-credentials", "better-auth"]
+
+  # Components configuration
+  components:
+    # Pub/Sub
+    - name: kafka-pubsub
+      namespace: default
+    # State Store (conversation history ONLY)
+    - name: statestore
+      namespace: default
+    # Secrets
+    - name: kubernetes-secrets
+      namespace: default
+    - name: oci-vault
+      namespace: default
+
+  # API logging configuration
+  logging:
+    apiLogging:
+      enabled: true
+      obfuscateURLs: false
+      omitHealthChecks: true
+
+  # HTTP pipeline configuration (middleware)
+  httpPipeline:
+    handlers:
+      - name: oauth2
+        type: middleware.http.oauth2
+      - name: uppercase
+        type: middleware.http.uppercase
+
+  # App health configuration
+  appHealth:
+    enabled: true
+    probeInterval: 10s  # Check health every 10 seconds
+    probeTimeout: 500ms  # Timeout for health check
+    threshold: 3  # Mark unhealthy after 3 failed checks

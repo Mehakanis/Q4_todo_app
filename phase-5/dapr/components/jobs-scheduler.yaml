@@ -1,0 +1,48 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: jobs-scheduler
+  namespace: default
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+    # Dapr Jobs API configuration for reminder scheduling
+    # Note: This component type "bindings.cron" is a fallback for Dapr < 1.13
+    # For Dapr 1.13+, use the Jobs API directly via HTTP: POST /v1.0-alpha1/jobs/{jobName}
+
+    # Cron binding for periodic cleanup tasks (every 5 minutes)
+    - name: schedule
+      value: "*/5 * * * *"  # Run every 5 minutes
+    - name: direction
+      value: "input"  # This binding triggers jobs (input direction)
+
+    # Alternative: Use Dapr Jobs API (recommended for Dapr 1.13+)
+    # Jobs API provides exact-time scheduling (not polling-based like cron)
+    # Schedule jobs via HTTP POST: /v1.0-alpha1/jobs/{jobName}
+    # Example job payload:
+    # {
+    #   "dueTime": "2025-12-29T16:00:00Z",  # ISO 8601 timestamp
+    #   "data": {"task_id": 123, "user_id": "user-456"},
+    #   "ttl": "1h"  # Time to live
+    # }
+
+scopes:
+  - notification-service  # Only Notification Service schedules reminders
+---
+# Note: For production, use Dapr Jobs API instead of cron bindings
+# Jobs API configuration is done programmatically via HTTP API
+# No component YAML needed for Jobs API (it's a core Dapr feature)
+#
+# Example: Schedule a one-time reminder
+# POST http://localhost:3500/v1.0-alpha1/jobs/reminder-task-123
+# {
+#   "dueTime": "2025-12-29T16:00:00Z",
+#   "data": {
+#     "type": "reminder",
+#     "task_id": 123,
+#     "user_id": "user-456",
+#     "reminder_at": "2025-12-29T16:00:00Z"
+#   },
+#   "ttl": "24h"
+# }

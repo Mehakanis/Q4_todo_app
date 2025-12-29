@@ -38,7 +38,10 @@
       "Bash(else echo \"ADR directory does not exist - will be created\")",
       "Bash(fi)",
       "Bash(touch:*)",
-      "Bash(git --version:*)"
+      "Bash(git --version:*)",
+      "Bash(if [ -d \"D:\\\\Todo_giaic_five_phases\\\\specs\\\\007-phase5-cloud-deployment\\\\checklists\" ])",
+      "Bash(then ls \"D:\\\\Todo_giaic_five_phases\\\\specs\\\\007-phase5-cloud-deployment\\\\checklists\")",
+      "Bash(else echo \"No checklists directory\")"
     ],
     "deny": [],
     "ask": []

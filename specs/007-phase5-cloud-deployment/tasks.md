@@ -58,38 +58,38 @@
 
 ### Database Migration
 
-- [ ] T024 Create migration script phase-5/backend/migrations/006_add_phase5_fields.sql with ALTER TABLE to add recurring_pattern, recurring_end_date, next_occurrence, reminder_at, reminder_sent columns
-- [ ] T025 Create database index on next_occurrence column in phase-5/backend/migrations/006_add_phase5_fields.sql WHERE next_occurrence IS NOT NULL
-- [ ] T026 Create database index on reminder_at and user_id columns in phase-5/backend/migrations/006_add_phase5_fields.sql WHERE reminder_at IS NOT NULL AND reminder_sent = FALSE
-- [ ] T027 Create rollback script phase-5/backend/migrations/006_rollback.sql with ALTER TABLE DROP COLUMN statements
-- [ ] T028 Test migration and rollback on local PostgreSQL instance
+- [X] T024 Create migration script phase-5/backend/migrations/006_add_phase5_fields.sql with ALTER TABLE to add recurring_pattern, recurring_end_date, next_occurrence, reminder_at, reminder_sent columns
+- [X] T025 Create database index on next_occurrence column in phase-5/backend/migrations/006_add_phase5_fields.sql WHERE next_occurrence IS NOT NULL
+- [X] T026 Create database index on reminder_at and user_id columns in phase-5/backend/migrations/006_add_phase5_fields.sql WHERE reminder_at IS NOT NULL AND reminder_sent = FALSE
+- [X] T027 Create rollback script phase-5/backend/migrations/006_rollback.sql with ALTER TABLE DROP COLUMN statements
+- [X] T028 Test migration and rollback on local PostgreSQL instance
 
 ### Dapr Components Setup
 
-- [ ] T029 [P] Create Dapr Pub/Sub component YAML phase-5/dapr/components/pubsub-kafka.yaml with Kafka broker configuration, 3 topics (task-events, reminders, task-updates)
-- [ ] T030 [P] Create Dapr State Store component YAML phase-5/dapr/components/statestore-postgresql.yaml with PostgreSQL connection for conversation history
-- [ ] T031 [P] Create Dapr Secrets component YAML phase-5/dapr/components/secretstore-kubernetes.yaml for Minikube deployment
-- [ ] T032 [P] Create Dapr Secrets component YAML phase-5/dapr/components/secretstore-oci-vault.yaml for OKE deployment
-- [ ] T033 [P] Create Dapr Jobs API component YAML phase-5/dapr/components/jobs-scheduler.yaml for reminder scheduling
-- [ ] T034 Create Dapr configuration YAML phase-5/dapr/config/config.yaml with tracing (Zipkin endpoint), metrics enabled, sampling rate 100%
+- [X] T029 [P] Create Dapr Pub/Sub component YAML phase-5/dapr/components/pubsub-kafka.yaml with Kafka broker configuration, 3 topics (task-events, reminders, task-updates)
+- [X] T030 [P] Create Dapr State Store component YAML phase-5/dapr/components/statestore-postgresql.yaml with PostgreSQL connection for conversation history
+- [X] T031 [P] Create Dapr Secrets component YAML phase-5/dapr/components/secretstore-kubernetes.yaml for Minikube deployment
+- [X] T032 [P] Create Dapr Secrets component YAML phase-5/dapr/components/secretstore-oci-vault.yaml for OKE deployment
+- [X] T033 [P] Create Dapr Jobs API component YAML phase-5/dapr/components/jobs-scheduler.yaml for reminder scheduling
+- [X] T034 Create Dapr configuration YAML phase-5/dapr/config/config.yaml with tracing (Zipkin endpoint), metrics enabled, sampling rate 100%
 
 ### Event Schemas
 
-- [ ] T035 Create event schema definitions YAML phase-5/specs/007-phase5-cloud-deployment/contracts/event-schemas.yaml with TaskCompletedEvent, ReminderScheduledEvent, TaskUpdatedEvent (all v1.0)
-- [ ] T036 Implement Pydantic event schema models in phase-5/backend/src/events/schemas.py with base EventSchema class and 3 event types
-- [ ] T037 Create event schema validation tests in phase-5/backend/tests/contract/test_event_schemas.py
+- [X] T035 Create event schema definitions YAML phase-5/specs/007-phase5-cloud-deployment/contracts/event-schemas.yaml with TaskCompletedEvent, ReminderScheduledEvent, TaskUpdatedEvent (all v1.0)
+- [X] T036 Implement Pydantic event schema models in phase-5/backend/src/events/schemas.py with base EventSchema class and 3 event types
+- [X] T037 Create event schema validation tests in phase-5/backend/tests/contract/test_event_schemas.py
 
 ### Kafka Setup
 
-- [ ] T038 Create Kafka values file phase-5/helm/kafka/values-minikube.yaml with Bitnami Kafka chart configuration, 12 partitions per topic, 7-day retention
-- [ ] T039 Create Kafka values file phase-5/helm/kafka/values-redpanda.yaml with Redpanda Cloud Serverless configuration, 12 partitions per topic, 30-day retention
-- [ ] T040 Create Kafka topic creation script phase-5/scripts/create-kafka-topics.sh with user_id partitioning strategy
+- [X] T038 Create Kafka values file phase-5/helm/kafka/values-minikube.yaml with Bitnami Kafka chart configuration, 12 partitions per topic, 7-day retention
+- [X] T039 Create Kafka values file phase-5/helm/kafka/values-redpanda.yaml with Redpanda Cloud Serverless configuration, 12 partitions per topic, 30-day retention
+- [X] T040 Create Kafka topic creation script phase-5/scripts/create-kafka-topics.sh with user_id partitioning strategy
 
 ### Base Event Infrastructure
 
-- [ ] T041 Implement Dapr HTTP client wrapper in phase-5/backend/src/integrations/dapr_client.py with pub/sub methods, state store methods, service invocation methods
-- [ ] T042 Implement event publisher in phase-5/backend/src/events/publisher.py with Dapr Pub/Sub integration, user_id partitioning, event_id generation
-- [ ] T043 Implement event consumer base class in phase-5/backend/src/events/consumers.py with Dapr Pub/Sub subscription, idempotency check, user isolation
+- [X] T041 Implement Dapr HTTP client wrapper in phase-5/backend/src/integrations/dapr_client.py with pub/sub methods, state store methods, service invocation methods
+- [X] T042 Implement event publisher in phase-5/backend/src/events/publisher.py with Dapr Pub/Sub integration, user_id partitioning, event_id generation
+- [X] T043 Implement event consumer base class in phase-5/backend/src/events/consumers.py with Dapr Pub/Sub subscription, idempotency check, user isolation
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
