@@ -1,10 +1,10 @@
-# Phase 3: AI-Powered Todo Chatbot
+# Phase V: Advanced Cloud Deployment
 
 **Status**: ✅ Complete
 **Version**: 1.0.0
-**Date**: 2025-12-14
+**Last Updated**: 2025-12-31
 
-AI-powered conversational interface for natural language task management using OpenAI ChatKit, OpenAI Agents SDK, and Official MCP SDK.
+Advanced cloud deployment with event-driven microservices, recurring tasks, reminders, Dapr integration, and production-ready Kubernetes orchestration.
 
 ---
 
@@ -12,48 +12,77 @@ AI-powered conversational interface for natural language task management using O
 
 - [Features](#features)
 - [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [User Stories](#user-stories)
 - [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-- [Environment Variables](#environment-variables)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
+- [Documentation](#documentation)
+- [Deployment Guides](#deployment-guides)
+- [Monitoring & Observability](#monitoring--observability)
+- [Development](#development)
 
 ---
 
 ## Features
 
-### Core Functionality
+### Core Functionality (Phase V)
 
-✅ **Natural Language Task Management**
-- Add tasks: "Add a task to buy groceries"
-- List tasks: "Show me all my tasks", "What's pending?"
-- Complete tasks: "Mark task 3 as complete"
-- Delete tasks: "Delete task 2", "Remove the shopping task"
-- Update tasks: "Change task 1 to 'Call mom tonight'"
+✅ **Recurring Tasks** (User Story 1)
+- Create tasks with daily, weekly, monthly, or yearly patterns
+- Automatic next occurrence generation when tasks complete
+- Support for recurring end dates
+- RRULE pattern parsing (simplified and RFC 5545 full format)
 
-✅ **Conversation Context**
-- Multi-turn conversations with context retention
-- Follow-up references: "Complete the first one", "Update that task"
-- Conversation history persists across sessions and server restarts
+✅ **Due Dates & Reminders** (User Story 2)
+- Set task due dates and times
+- Schedule reminders (1 hour, 1 day, 1 week before due)
+- Email notifications via Notification Service
+- Exact-time scheduling with Dapr Jobs API
+- Automatic reminder cancellation on task completion
 
-✅ **Real-Time Streaming**
-- Server-Sent Events (SSE) for streaming AI responses
-- Responses begin streaming < 2 seconds after message submission
-- ChatKit widget displays responses in real-time
+✅ **Event-Driven Architecture**
+- Kafka event streaming for task operations
+- Dapr Pub/Sub integration for microservices
+- User-isolated event partitioning (12 partitions)
+- Dead Letter Queue with event-type-specific retry strategies
+- At-least-once delivery guarantees
 
-✅ **Production Features**
-- JWT authentication with Better Auth integration
-- User isolation (each user sees only their own tasks and conversations)
-- Error handling with retry logic and exponential backoff
-- Rate limit handling for OpenAI/Gemini APIs
-- Conversation history management
+✅ **Microservices**
+- **Backend Service**: FastAPI with JWT authentication
+- **Recurring Task Service**: Consumes task.completed events, creates next occurrences
+- **Notification Service**: Consumes reminder events, sends email notifications
+- All services communicate via Dapr Pub/Sub and Service Invocation
+
+✅ **Local Deployment (Minikube)** (User Story 3)
+- One-command deployment script
+- Full stack: Frontend, Backend, Kafka, Dapr, PostgreSQL
+- Development-ready environment with port-forwarding
+- Monitoring stack: Prometheus, Grafana, Zipkin
+
+✅ **Cloud Deployment (OKE/AKS/GKE)** (User Story 4)
+- Primary: Oracle Kubernetes Engine (OKE) with always-free tier
+- Secondary: Azure (AKS), Google Cloud (GKE)
+- Terraform Infrastructure as Code
+- Automated CI/CD with GitHub Actions
+- TLS certificates via cert-manager
+- Secrets management with cloud vaults
+
+✅ **Monitoring & Observability** (User Story 5)
+- Prometheus metrics collection
+- Grafana dashboards (Kafka, Dapr, Recurring Tasks, Reminders)
+- Distributed tracing with Zipkin
+- Centralized logging (structured JSON)
+- Health check endpoints for all services
+- Alertmanager with multi-channel routing (Slack, Email, PagerDuty)
+
+### Backward Compatibility
+
+✅ **Phase II/III/IV Features Preserved**
+- Multi-user authentication (Better Auth + JWT)
+- Task CRUD with user isolation
+- Advanced filtering, sorting, search
+- Priorities, tags, export/import
+- AI chatbot with natural language task management
+- All existing features work with NULL Phase V fields
 
 ---
 
@@ -62,651 +91,627 @@ AI-powered conversational interface for natural language task management using O
 ### System Overview
 
 ```
-┌──────────────┐      HTTPS      ┌─────────────────┐      REST/SSE      ┌──────────────────┐
-│   Browser    │ ←────────────→  │  Next.js 16     │ ←────────────────→ │  FastAPI         │
-│  (ChatKit)   │                  │  Frontend       │                     │  Backend         │
-└──────────────┘                  └─────────────────┘                     └──────────────────┘
-                                         │                                        │
-                                         │ Better Auth JWT                        │
-                                         ▼                                        ▼
-                                  ┌─────────────────┐                     ┌──────────────────┐
-                                  │  Better Auth    │                     │  OpenAI Agents   │
-                                  │  (Auth Server)  │                     │  SDK + MCP Tools │
-                                  └─────────────────┘                     └──────────────────┘
-                                         │                                        │
-                                         │                                        │
-                                         ▼                                        ▼
-                                  ┌────────────────────────────────────────────────────────┐
-                                  │           Neon Serverless PostgreSQL                    │
-                                  │  - Users, Sessions (Better Auth)                        │
-                                  │  - Tasks, Conversations, Messages (Application)         │
-                                  └────────────────────────────────────────────────────────┘
+┌──────────────┐   HTTPS    ┌─────────────────┐   REST/SSE   ┌──────────────────┐
+│   Browser    │ ←────────→  │  Next.js 16     │ ←──────────→ │  FastAPI         │
+│  (Frontend)  │             │  Frontend       │              │  Backend         │
+└──────────────┘             └─────────────────┘              └──────────────────┘
+                                    │                                 │
+                                    │ Better Auth JWT                 │ Dapr Pub/Sub
+                                    ▼                                 ▼
+                             ┌─────────────────┐              ┌──────────────────┐
+                             │  Better Auth    │              │  Kafka (Dapr)    │
+                             │  (Auth Server)  │              │  - task-events   │
+                             └─────────────────┘              │  - reminders     │
+                                    │                         │  - task-updates  │
+                                    │                         └──────────────────┘
+                                    ▼                                 │
+                             ┌────────────────────────────────────────────────────┐
+                             │           Neon Serverless PostgreSQL               │
+                             │  - Users, Sessions (Better Auth)                   │
+                             │  - Tasks, Conversations, Messages (Application)    │
+                             └────────────────────────────────────────────────────┘
+                                                                      ▲
+                             ┌────────────────────────────────────────┴───────────┐
+                             │                                                    │
+                      ┌──────────────────┐                           ┌──────────────────┐
+                      │  Recurring Task  │                           │  Notification    │
+                      │  Service (Dapr)  │                           │  Service (Dapr)  │
+                      │  - Next occur.   │                           │  - Email alerts  │
+                      └──────────────────┘                           └──────────────────┘
 ```
 
-### Request Flow
+### Event Flow: Recurring Task Completion
 
-1. **User sends message** → ChatKit widget
-2. **Frontend** → Backend: `POST /api/{user_id}/chat` with JWT token
-3. **Backend validates JWT** → Extracts user_id
-4. **Conversation service** → Loads history from database
-5. **TodoAgent (OpenAI Agents SDK)** → Processes message with MCP tools
-6. **MCP Tools** → Execute task operations (add, list, complete, delete, update)
-7. **Response streams** → Client via Server-Sent Events (SSE)
-8. **Conversation service** → Saves message and response to database
+1. User marks recurring task complete → Backend publishes `task.completed` event to Kafka
+2. Kafka partitions event by `user_id` → Routes to Recurring Task Service consumer
+3. Recurring Task Service calculates next occurrence using RRULE parser
+4. Service creates next task via Dapr Service Invocation → Backend API
+5. Backend publishes `task.created` event → Completes cycle
+
+### Event Flow: Reminder Notification
+
+1. User creates task with due date + reminder offset → Backend publishes `reminder.scheduled` event
+2. Notification Service schedules reminder via Dapr Jobs API
+3. At reminder time, Dapr triggers job → Notification Service sends email via SMTP
+4. Service updates `reminder_sent=true` via Dapr Service Invocation → Backend API
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- **Local**: Docker, Minikube (4 CPUs, 8GB RAM), kubectl, Helm, Dapr CLI
+- **Cloud**: Terraform, Cloud CLI (OCI/Azure/Google), kubectl, Helm
+
+### 1. Minikube Deployment (Local)
+
+```bash
+# Start Minikube and deploy everything
+cd phase-5
+./scripts/deploy-minikube.sh
+
+# Access frontend
+kubectl port-forward svc/frontend 3000:3000
+# Open http://localhost:3000
+
+# Access Grafana dashboards
+kubectl port-forward svc/grafana 30000:3000
+# Open http://localhost:30000 (admin/admin)
+
+# Access Zipkin tracing
+kubectl port-forward svc/zipkin 30001:9411
+# Open http://localhost:30001
+```
+
+### 2. Cloud Deployment (OKE)
+
+```bash
+# Provision infrastructure with Terraform
+cd phase-5/terraform/oke
+terraform init
+terraform apply -var-file="terraform.tfvars"
+
+# Deploy application with Helm
+cd ../../
+helm install todo-app ./helm/todo-app -f helm/todo-app/values-oke.yaml
+
+# Verify deployment
+kubectl get pods
+kubectl get daprcomponents
+```
+
+### 3. CI/CD Deployment (Automated)
+
+```bash
+# Push to main branch triggers production deployment
+git checkout main
+git merge develop
+git push origin main
+# GitHub Actions automatically builds, tests, and deploys to OKE
+```
+
+---
+
+## User Stories
+
+### User Story 1: Recurring Tasks (Priority P1)
+
+**Goal**: Users can create tasks that repeat automatically on a schedule.
+
+**Example**:
+```
+User: "Create a daily task: Team standup at 9 AM"
+AI: ✅ Created recurring task "Team standup" (daily at 9 AM)
+
+[User marks task complete]
+AI: ✅ Task complete. Next occurrence created for tomorrow at 9 AM.
+```
+
+**Implementation**: RRULE parser, Kafka event (`task.completed`), Recurring Task Service, next occurrence calculation
+
+### User Story 2: Due Dates & Reminders (Priority P1)
+
+**Goal**: Users receive automatic reminder notifications before task deadlines.
+
+**Example**:
+```
+User: "Remind me to submit report by Friday 5 PM, remind me 1 day before"
+AI: ✅ Task created with due date Friday 5 PM, reminder scheduled for Thursday 5 PM
+
+[Thursday 5 PM arrives]
+Email: "Reminder: Submit report is due in 1 day (Friday 5 PM)"
+```
+
+**Implementation**: Dapr Jobs API, Kafka event (`reminder.scheduled`), Notification Service, SMTP integration
+
+### User Story 3: Local Deployment (Priority P2)
+
+**Goal**: Developers deploy entire stack to Minikube with one command.
+
+**Validation**: Run `./scripts/deploy-minikube.sh` → All pods Running within 15 minutes → Frontend accessible via port-forward
+
+### User Story 4: Cloud Deployment (Priority P2)
+
+**Goal**: Operations teams deploy to OKE/AKS/GKE with CI/CD pipelines.
+
+**Validation**: Push to `main` → GitHub Actions builds Docker images → Helm deploys to OKE → Health checks pass → Metrics in Grafana
+
+### User Story 5: Monitoring & Observability (Priority P3)
+
+**Goal**: Operations teams monitor production system health and performance.
+
+**Validation**: Access Grafana → Verify metrics from all services → Trace complete request in Zipkin → Alerts delivered to Slack/Email
 
 ---
 
 ## Tech Stack
 
-### Backend
+### Backend Services
 
 - **Framework**: FastAPI (Python 3.13+)
-- **AI Orchestration**: OpenAI Agents SDK (>=0.2.9)
-- **MCP Protocol**: Official MCP SDK (>=1.0.0)
-- **Database**: Neon Serverless PostgreSQL
 - **ORM**: SQLModel with Alembic migrations
+- **Database**: Neon Serverless PostgreSQL
 - **Authentication**: JWT verification (shared secret with Better Auth)
-- **Streaming**: Server-Sent Events (SSE)
+- **Event Streaming**: Kafka via Dapr Pub/Sub
+- **Scheduling**: Dapr Jobs API (exact-time reminders)
+- **Service Communication**: Dapr Service Invocation with mTLS
 
 ### Frontend
 
 - **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript 5+
-- **Chat UI**: OpenAI ChatKit React (@openai/chatkit-react 1.3.0)
+- **Language**: TypeScript 5+ (strict mode)
+- **Chat UI**: OpenAI ChatKit React
 - **Authentication**: Better Auth with JWT plugin
 - **Styling**: Tailwind CSS 4
-- **State Management**: React hooks
 
-### Database Schema
+### Infrastructure
 
-```sql
--- Conversations
-CREATE TABLE conversations (
-  id SERIAL PRIMARY KEY,
-  user_id VARCHAR NOT NULL,
-  created_at TIMESTAMP NOT NULL,
-  updated_at TIMESTAMP NOT NULL,
-  INDEX idx_conversations_user_id (user_id)
-);
+- **Orchestration**: Kubernetes (Minikube local, OKE/AKS/GKE cloud)
+- **Service Mesh**: Dapr (all 5 building blocks: Pub/Sub, State, Bindings, Secrets, Service Invocation)
+- **Message Broker**: Kafka (Bitnami Helm chart local, Redpanda Cloud Serverless cloud)
+- **IaC**: Terraform (OKE/AKS/GKE templates)
+- **Package Management**: Helm 3
 
--- Messages
-CREATE TABLE messages (
-  id SERIAL PRIMARY KEY,
-  user_id VARCHAR NOT NULL,
-  conversation_id INTEGER NOT NULL REFERENCES conversations(id),
-  role VARCHAR NOT NULL,  -- 'user' | 'assistant'
-  content TEXT NOT NULL,
-  tool_calls JSON,
-  created_at TIMESTAMP NOT NULL,
-  INDEX idx_messages_conversation_id (conversation_id),
-  INDEX idx_messages_user_id (user_id)
-);
+### Monitoring & Observability
 
--- Tasks (from Phase 2)
-CREATE TABLE tasks (
-  id SERIAL PRIMARY KEY,
-  user_id VARCHAR NOT NULL,
-  title VARCHAR NOT NULL,
-  description TEXT,
-  completed BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP NOT NULL,
-  updated_at TIMESTAMP NOT NULL,
-  INDEX idx_tasks_user_id (user_id)
-);
-```
+- **Metrics**: Prometheus
+- **Dashboards**: Grafana (4 custom dashboards: Kafka, Dapr, Recurring Tasks, Reminders)
+- **Tracing**: Zipkin (distributed tracing with Dapr integration)
+- **Logging**: Structured JSON logs → OCI Logging / Azure Log Analytics / Google Cloud Logging
+- **Alerting**: Alertmanager (Slack, Email, PagerDuty)
+
+### Microservices
+
+1. **Backend Service**: Task CRUD, JWT auth, event publishing
+2. **Recurring Task Service**: Consumes `task.completed` events, creates next occurrences via RRULE parser
+3. **Notification Service**: Consumes `reminder.scheduled` events, sends email notifications
 
 ---
 
-## Prerequisites
+## Documentation
 
-### Required Software
+### Quick Links
 
-- **Node.js**: 22+ (for frontend)
-- **Python**: 3.13+ (for backend)
-- **UV**: Python package manager (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
-- **pnpm**: 9+ (for frontend: `npm install -g pnpm`)
-- **PostgreSQL**: Neon Serverless PostgreSQL account
-- **OpenAI API Key**: For GPT models (or Gemini API key)
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions (Minikube, OKE, AKS, GKE)
+- **[Operations Runbook](docs/RUNBOOK.md)** - Common issues, troubleshooting, rollback procedures
+- **[Monitoring Guide](docs/MONITORING.md)** - Grafana dashboards, Zipkin queries, alert response
+- **[Architecture Documentation](docs/ARCHITECTURE.md)** - System context, microservices architecture, event flows
 
-### API Keys Required
+### Specifications
 
-1. **OpenAI API Key** (for GPT-4o or GPT-4o-mini)
-   - Sign up: https://platform.openai.com/signup
-   - Get API key: https://platform.openai.com/api-keys
+All specifications are in `specs/007-phase5-cloud-deployment/`:
 
-2. **Neon PostgreSQL Database**
-   - Sign up: https://neon.tech
-   - Create database and get connection string
-
-3. **Better Auth Secret**
-   - Generate: `openssl rand -base64 32`
-   - Same secret for frontend and backend
+- **[spec.md](specs/007-phase5-cloud-deployment/spec.md)** - Feature requirements, user scenarios, clarifications
+- **[plan.md](specs/007-phase5-cloud-deployment/plan.md)** - Architecture decisions, implementation strategy
+- **[tasks.md](specs/007-phase5-cloud-deployment/tasks.md)** - Task breakdown with dependencies (201 tasks, 8 phases)
+- **[data-model.md](specs/007-phase5-cloud-deployment/data-model.md)** - Database schema changes, event schemas
+- **[contracts/](specs/007-phase5-cloud-deployment/contracts/)** - API contracts, event schemas, service interfaces
 
 ---
 
-## Installation
+## Deployment Guides
 
-### 1. Clone Repository
+### Minikube (Local Development)
 
+**Prerequisites**:
+- Docker, Minikube, kubectl, Helm, Dapr CLI
+- 4 CPUs, 8GB RAM minimum
+
+**Deploy**:
 ```bash
-git clone <repository-url>
-cd Todo_giaic_five_phases/phase-3
+cd phase-5
+./scripts/deploy-minikube.sh
 ```
 
-### 2. Backend Setup
+**Access**:
+```bash
+# Frontend
+kubectl port-forward svc/frontend 3000:3000
+
+# Grafana
+kubectl port-forward svc/grafana 30000:3000
+
+# Zipkin
+kubectl port-forward svc/zipkin 30001:9411
+```
+
+**Verify**:
+```bash
+kubectl get pods
+kubectl get daprcomponents
+kubectl logs -l app=backend -f
+```
+
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete instructions.
+
+### OKE (Oracle Cloud - Primary)
+
+**Infrastructure Provisioning**:
+```bash
+cd phase-5/terraform/oke
+terraform init
+terraform apply -var-file="terraform.tfvars"
+```
+
+**Application Deployment**:
+```bash
+# Configure kubectl
+export KUBECONFIG=$(terraform output -raw kubeconfig_path)
+
+# Deploy with Helm
+cd ../../
+helm install todo-app ./helm/todo-app -f helm/todo-app/values-oke.yaml
+
+# Verify
+kubectl get pods
+kubectl get svc
+```
+
+**Always-Free Tier**: 2 VMs, 4 ARM cores, 24GB RAM total
+
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for OKE-specific configuration.
+
+### AKS (Azure) / GKE (Google Cloud) - Secondary
+
+**AKS**:
+```bash
+cd phase-5/terraform/aks
+terraform apply
+helm install todo-app ../../helm/todo-app -f ../../helm/todo-app/values-aks.yaml
+```
+
+**GKE**:
+```bash
+cd phase-5/terraform/gke
+terraform apply
+helm install todo-app ../../helm/todo-app -f ../../helm/todo-app/values-gke.yaml
+```
+
+See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for cloud-specific instructions.
+
+---
+
+## Monitoring & Observability
+
+### Grafana Dashboards
+
+Access: `http://<minikube-ip>:30000` (local) or LoadBalancer IP (cloud)
+
+**Dashboards**:
+1. **Kafka Dashboard**: Topic metrics, consumer lag, partition distribution
+2. **Dapr Dashboard**: Component health, service invocation metrics, pub/sub success rate
+3. **Recurring Tasks Dashboard**: Creation rate, next occurrence distribution, RRULE calculation duration
+4. **Reminders Dashboard**: Reminders sent total, delivery latency, failed reminders count
+
+### Zipkin Distributed Tracing
+
+Access: `http://<minikube-ip>:30001` (local) or LoadBalancer IP (cloud)
+
+**Example Traces**:
+- Task completion → Kafka → Recurring Task Service → Next occurrence creation
+- Reminder scheduled → Dapr Jobs API → Notification Service → Email sent
+
+### Prometheus Metrics
+
+**Key Metrics**:
+- `task_operations_total{operation="create|complete|delete"}`
+- `kafka_consumer_lag_seconds`
+- `dapr_component_health{component="pubsub|statestore|jobs"}`
+- `reminder_delivery_latency_seconds`
+- `rrule_calculation_duration_seconds`
+
+### Health Checks
+
+All services expose health endpoints:
 
 ```bash
-cd backend
+# Backend
+curl http://backend:8000/health
 
-# Install dependencies with UV
+# Recurring Task Service
+curl http://recurring-task-service:8001/health
+
+# Notification Service
+curl http://notification-service:8002/health
+```
+
+See [MONITORING.md](docs/MONITORING.md) for complete monitoring guide.
+
+---
+
+## Development
+
+### Local Development Setup
+
+**Backend**:
+```bash
+cd phase-5/backend
 uv sync --extra dev
-
-# Create .env file
-cp .env.example .env
-# Edit .env with your credentials (see Configuration section)
-
-# Run database migrations
 uv run alembic upgrade head
-```
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-
-# Install dependencies
-pnpm install
-
-# Create .env.local file
-cp .env.local.example .env.local
-# Edit .env.local with your credentials (see Configuration section)
-```
-
----
-
-## Configuration
-
-### Backend Environment Variables
-
-Create `backend/.env`:
-
-```bash
-# Database Configuration
-DATABASE_URL=postgresql://user:password@host:5432/dbname
-
-# Better Auth (MUST match frontend)
-BETTER_AUTH_SECRET=your-secret-key-here
-
-# AI Provider Configuration
-LLM_PROVIDER=openai  # or "gemini"
-
-# OpenAI Configuration (if LLM_PROVIDER=openai)
-OPENAI_API_KEY=sk-proj-...
-OPENAI_DEFAULT_MODEL=gpt-4o-2024-11-20  # or gpt-4o-mini
-
-# Gemini Configuration (if LLM_PROVIDER=gemini)
-GEMINI_API_KEY=AIza...
-GEMINI_DEFAULT_MODEL=gemini-2.0-flash-exp
-
-# Server Configuration
-ENVIRONMENT=development
-CORS_ORIGINS=http://localhost:3000
-LOG_LEVEL=INFO
-PORT=8000
-REQUEST_TIMEOUT=30
-```
-
-### Frontend Environment Variables
-
-Create `frontend/.env.local`:
-
-```bash
-# Backend API URL
-NEXT_PUBLIC_CHATKIT_API_URL=http://localhost:8000
-
-# Better Auth (MUST match backend)
-BETTER_AUTH_SECRET=your-secret-key-here
-BETTER_AUTH_URL=http://localhost:3000
-
-# Database (for Better Auth)
-DATABASE_URL=postgresql://user:password@host:5432/dbname
-
-# Optional: Production domain key for ChatKit
-# NEXT_PUBLIC_OPENAI_DOMAIN_KEY=your-domain-key-here
-```
-
-**CRITICAL**: `BETTER_AUTH_SECRET` MUST be identical in both frontend and backend for JWT verification to work.
-
----
-
-## Running the Application
-
-### Development Mode (Recommended)
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
 uv run uvicorn main:app --reload --port 8000
 ```
 
-**Terminal 2 - Frontend:**
+**Frontend**:
 ```bash
-cd frontend
+cd phase-5/frontend
+pnpm install
 pnpm dev
 ```
 
-**Access:**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
-### Production Mode
-
-**Backend:**
+**Microservices** (in separate terminals):
 ```bash
-cd backend
-uv run uvicorn main:app --host 0.0.0.0 --port 8000
+# Recurring Task Service
+cd phase-5/services/recurring-task-service
+uv sync
+uv run uvicorn main:app --port 8001
+
+# Notification Service
+cd phase-5/services/notification-service
+uv sync
+uv run uvicorn main:app --port 8002
 ```
 
-**Frontend:**
+### Testing
+
+**Backend Tests**:
 ```bash
-cd frontend
-pnpm build
-pnpm start
+cd backend
+uv run pytest                           # All tests
+uv run pytest tests/unit/              # Unit tests
+uv run pytest tests/integration/       # Integration tests
+uv run pytest tests/e2e/               # End-to-end tests
+uv run pytest --cov=. --cov-report=html # Coverage
 ```
 
-### Docker (Full Stack)
-
+**Load Tests**:
 ```bash
-# From project root
-docker-compose up
+cd phase-5/tests/load
+uv run locust -f test_kafka_throughput.py
+uv run locust -f test_consumer_scaling.py
+```
 
-# Or build and run backend only
+### Environment Variables
+
+**Backend (.env)**:
+```bash
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+BETTER_AUTH_SECRET=your-secret-key
+DAPR_HTTP_PORT=3500
+KAFKA_BROKERS=kafka:9092
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+```
+
+**Frontend (.env.local)**:
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000
+BETTER_AUTH_SECRET=your-secret-key
+DATABASE_URL=postgresql://user:password@host:5432/dbname
+```
+
+### Database Migrations
+
+**Apply migrations**:
+```bash
 cd backend
-docker build -t todo-backend .
-docker run -p 8000:8000 --env-file .env todo-backend
+uv run alembic upgrade head
+```
+
+**Create new migration**:
+```bash
+uv run alembic revision --autogenerate -m "Description"
+```
+
+**Rollback**:
+```bash
+uv run alembic downgrade -1
+```
+
+### Dapr Local Development
+
+**Run with Dapr sidecar**:
+```bash
+dapr run --app-id backend --app-port 8000 -- uv run uvicorn main:app
+dapr run --app-id recurring-task-service --app-port 8001 -- uv run uvicorn main:app
+dapr run --app-id notification-service --app-port 8002 -- uv run uvicorn main:app
 ```
 
 ---
 
-## Usage
+## CI/CD Pipelines
 
-### Getting Started
+### GitHub Actions Workflows
 
-1. **Sign up / Sign in** at http://localhost:3000
-2. **Navigate to Chat** via "AI Chat" link in navigation
-3. **Start chatting** with the AI assistant
+**Production Deployment** (`.github/workflows/deploy-production.yml`):
+- Trigger: Push to `main` branch
+- Steps: Build Docker images → Push to OCIR → Deploy to OKE via Helm → Run health checks
+- Rollback: Automatic on health check failure
 
-### Example Conversations
+**Staging Deployment** (`.github/workflows/deploy-staging.yml`):
+- Trigger: Push to `develop` branch
+- Steps: Build → Deploy to staging environment → Run integration tests
 
-#### Adding Tasks
+### Secrets Configuration
 
-```
-You: Add a task to buy groceries
-AI: ✅ I've added "Buy groceries" to your task list!
-
-You: Remind me to call mom tonight
-AI: ✅ Task created: "Call mom tonight"
-```
-
-#### Listing Tasks
-
-```
-You: Show me all my tasks
-AI: Here are your tasks:
-1. Buy groceries (pending)
-2. Call mom tonight (pending)
-3. Finish report (completed)
-
-You have 2 pending tasks and 1 completed task.
-
-You: What's pending?
-AI: You have 2 pending tasks:
-1. Buy groceries
-2. Call mom tonight
-```
-
-#### Completing Tasks
-
-```
-You: Mark task 1 as complete
-AI: ✅ Great job! I've marked "Buy groceries" as complete.
-
-You: I finished calling mom
-AI: ✅ Excellent! I've marked "Call mom tonight" as complete.
-```
-
-#### Deleting Tasks
-
-```
-You: Delete task 2
-AI: ✅ I've removed "Call mom tonight" from your task list.
-
-You: Remove the groceries task
-AI: ✅ Task "Buy groceries" has been deleted.
-```
-
-#### Updating Tasks
-
-```
-You: Change task 1 to "Call mom at 8pm"
-AI: ✅ I've updated task 1 to "Call mom at 8pm"
-
-You: Update the report task to "Finish Q4 report"
-AI: ✅ Task updated to "Finish Q4 report"
-```
-
-#### Follow-up References
-
-```
-You: Show my tasks
-AI: Here are your tasks:
-1. Buy groceries
-2. Call mom
-3. Finish report
-
-You: Complete the first one
-AI: ✅ Great job! I've marked "Buy groceries" as complete.
-
-You: Delete that report task
-AI: ✅ I've removed "Finish report" from your task list.
-```
+Required GitHub Secrets:
+- `OCI_TENANCY_OCID`, `OCI_USER_OCID`, `OCI_FINGERPRINT`, `OCI_PRIVATE_KEY`
+- `DATABASE_URL`, `BETTER_AUTH_SECRET`
+- `OPENAI_API_KEY`, `SMTP_PASSWORD`
 
 ---
 
-## API Endpoints
+## Performance & Scalability
 
-### Chat Endpoints
+### Performance Optimizations
 
-#### POST `/api/{user_id}/chat`
+✅ Database connection pooling (pool_size=10, max_overflow=20)
+✅ Kafka consumer prefetch optimization (prefetch_count=10)
+✅ RRULE calculation caching (functools.lru_cache for repeated patterns)
+✅ Bulk inserts for multiple next occurrences
 
-Stream AI chat responses with Server-Sent Events.
+### Scalability Targets
 
-**Headers:**
-- `Authorization: Bearer <jwt_token>` (required)
-- `Content-Type: application/json`
+- **Kafka Throughput**: 1000 events/sec sustained
+- **Consumer Scaling**: Horizontal scaling up to 12 instances (matching 12 partitions)
+- **Consumer Lag**: < 1 second under normal load
+- **Reminder Delivery**: Exact-time scheduling (no polling delay)
 
-**Request Body:**
-```json
-{
-  "conversation_id": 1,  // optional, null for new conversation
-  "message": "Add a task to buy groceries"
-}
-```
+### Resource Limits (OKE Always-Free)
 
-**Response:** Server-Sent Events stream
+**Per Pod**:
+- Requests: 200m CPU, 512Mi memory
+- Limits: 1000m CPU, 1Gi memory
 
-```
-data: {"type": "content", "content": "✅ I've added"}
-data: {"type": "content", "content": " \"Buy groceries\""}
-data: {"type": "content", "content": " to your task list!"}
-data: {"type": "done", "conversation_id": 1}
-```
-
-**Error Response:**
-```
-data: {"type": "error", "code": "RATE_LIMIT_EXCEEDED", "message": "The AI service is currently experiencing high demand..."}
-```
-
-#### GET `/api/{user_id}/conversations`
-
-List user's conversations.
-
-**Headers:**
-- `Authorization: Bearer <jwt_token>` (required)
-
-**Query Parameters:**
-- `limit` (optional, default: 50): Number of conversations to return
-- `offset` (optional, default: 0): Pagination offset
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "conversations": [
-      {
-        "id": 1,
-        "created_at": "2025-12-14T10:30:00",
-        "updated_at": "2025-12-14T11:45:00"
-      }
-    ],
-    "count": 1,
-    "limit": 50,
-    "offset": 0
-  }
-}
-```
-
-### MCP Tools (Internal)
-
-The backend exposes 5 MCP tools for the AI agent:
-
-1. **add_task(user_id, title, description)** - Create new task
-2. **list_tasks(user_id, status)** - List tasks (all/pending/completed)
-3. **complete_task(user_id, task_id)** - Mark task as complete
-4. **delete_task(user_id, task_id)** - Remove task
-5. **update_task(user_id, task_id, title, description)** - Update task details
+**Total Cluster** (2 nodes × 2 OCPUs × 12GB RAM):
+- 4 OCPUs, 24GB RAM
+- ~12 pods (backend, frontend, 2× recurring-task, 2× notification, Kafka, monitoring)
 
 ---
 
-## Environment Variables
+## Security
 
-### Backend (.env)
+### Authentication & Authorization
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DATABASE_URL` | ✅ | - | Neon PostgreSQL connection string |
-| `BETTER_AUTH_SECRET` | ✅ | - | Shared secret for JWT (must match frontend) |
-| `LLM_PROVIDER` | ✅ | `openai` | AI provider: `openai` or `gemini` |
-| `OPENAI_API_KEY` | If `LLM_PROVIDER=openai` | - | OpenAI API key |
-| `OPENAI_DEFAULT_MODEL` | No | `gpt-4o-2024-11-20` | OpenAI model name |
-| `GEMINI_API_KEY` | If `LLM_PROVIDER=gemini` | - | Gemini API key |
-| `GEMINI_DEFAULT_MODEL` | No | `gemini-2.0-flash-exp` | Gemini model name |
-| `ENVIRONMENT` | No | `development` | Environment: `development` or `production` |
-| `CORS_ORIGINS` | No | `http://localhost:3000` | Comma-separated allowed origins |
-| `LOG_LEVEL` | No | `INFO` | Log level: DEBUG, INFO, WARNING, ERROR |
-| `PORT` | No | `8000` | Backend server port |
-| `REQUEST_TIMEOUT` | No | `30` | Request timeout in seconds |
+- **Frontend → Backend**: JWT tokens signed with Better Auth shared secret
+- **Service → Service**: Dapr mTLS for service invocation
+- **Event Authorization**: `user_id` propagation in all Kafka events
+- **User Isolation**: All database queries filtered by `user_id`
 
-### Frontend (.env.local)
+### Security Hardening
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NEXT_PUBLIC_CHATKIT_API_URL` | ✅ | - | Backend API base URL |
-| `BETTER_AUTH_SECRET` | ✅ | - | Shared secret for JWT (must match backend) |
-| `BETTER_AUTH_URL` | ✅ | - | Frontend URL for Better Auth |
-| `DATABASE_URL` | ✅ | - | Neon PostgreSQL connection string |
-| `NEXT_PUBLIC_OPENAI_DOMAIN_KEY` | No | - | ChatKit domain key (for production) |
+✅ Input validation for `recurring_pattern` (RRULE injection prevention)
+✅ Rate limiting: 100 requests/minute per user (slowapi)
+✅ User filtering in all microservices (prevent cross-user data access)
+✅ Dapr mTLS enabled in production
+✅ TLS certificates via cert-manager (Let's Encrypt)
+
+### Secrets Management
+
+- **Local**: Kubernetes Secrets
+- **Cloud**: OCI Vault / Azure Key Vault / Google Secret Manager
+- **Dapr**: Secrets API for secure credential retrieval
+- **No hardcoded secrets**: All credentials via environment variables or Dapr Secrets
 
 ---
 
-## Testing
+## Backward Compatibility
 
-### Backend Tests
+### Phase II/III/IV Features
 
+✅ All existing tasks work with NULL Phase V fields
+✅ Task creation without `recurring_pattern` creates non-recurring tasks
+✅ API backward compatible (optional `recurring_pattern`, `reminder_at` parameters)
+✅ Database migration rollback script available (`006_rollback.sql`)
+
+### Migration Validation
+
+**Test existing functionality**:
 ```bash
-cd backend
+# Create non-recurring task (Phase II functionality)
+POST /api/tasks {"title": "Old task"}  # No recurring_pattern
 
-# Run all tests
-uv run pytest
+# Verify filtering works
+GET /api/tasks?priority=high&completed=false
 
-# Run with coverage
-uv run pytest --cov=. --cov-report=html
+# Verify search works
+GET /api/tasks?search=report
 
-# Run specific test file
-uv run pytest tests/test_chat_error_handling.py -v
-
-# Run specific test
-uv run pytest tests/test_chat.py::test_chat_endpoint -v
+# Verify export works
+GET /api/tasks/export?format=json
 ```
-
-### Frontend Tests
-
-```bash
-cd frontend
-
-# Run all tests
-pnpm test
-
-# Run with watch mode
-pnpm test:watch
-
-# Run with coverage
-pnpm test:coverage
-```
-
-### Manual Testing
-
-1. **Start both services** (backend + frontend)
-2. **Sign in** to create authenticated session
-3. **Navigate to /chat** page
-4. **Test scenarios:**
-   - Add task: "Add a task to test the chat"
-   - List tasks: "Show me all my tasks"
-   - Complete task: "Mark task 1 as complete"
-   - Delete task: "Delete task 2"
-   - Update task: "Change task 1 to 'Updated task'"
-   - Follow-up: "Show tasks" → "Complete the first one"
-
----
-
-## Deployment
-
-### Backend Deployment
-
-**Option 1: Docker**
-```bash
-cd backend
-docker build -t todo-backend .
-docker run -p 8000:8000 --env-file .env todo-backend
-```
-
-**Option 2: Uvicorn**
-```bash
-cd backend
-uv run uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-### Frontend Deployment
-
-**Option 1: Vercel** (Recommended for Next.js)
-```bash
-cd frontend
-vercel deploy --prod
-```
-
-**Option 2: Docker**
-```bash
-cd frontend
-docker build -t todo-frontend .
-docker run -p 3000:3000 todo-frontend
-```
-
-### Environment Variables (Production)
-
-**Backend:**
-- Set `ENVIRONMENT=production`
-- Use production database URL
-- Use HTTPS for `CORS_ORIGINS`
-- Set appropriate `LOG_LEVEL` (WARNING or ERROR)
-
-**Frontend:**
-- Set `NEXT_PUBLIC_CHATKIT_API_URL` to production backend URL
-- Use production `DATABASE_URL`
-- Set `NEXT_PUBLIC_OPENAI_DOMAIN_KEY` for ChatKit domain key (optional)
 
 ---
 
 ## Troubleshooting
 
-### ChatKit Widget Blank/Not Rendering
+### Common Issues
 
-**Solution**: Ensure ChatKit CDN script is loaded in `app/layout.tsx`:
-
-```tsx
-<Script
-  src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
-  strategy="afterInteractive"
-/>
-```
-
-### "AI service unavailable" errors
-
-**Causes:**
-1. Invalid OpenAI API key → Check `OPENAI_API_KEY` in backend `.env`
-2. Rate limit exceeded → Wait and retry, or upgrade OpenAI API tier
-3. Network issues → Check internet connection
-
-**Solution**: Check backend logs for detailed error messages:
+**Consumer Lag**:
 ```bash
-cd backend
-tail -f logs/app.log  # or check console output
+# Check Kafka consumer lag
+kubectl exec kafka-0 -- kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group recurring-task-service
 ```
 
-### JWT Authentication Failing
+**Reminder Failures**:
+```bash
+# Check Notification Service logs
+kubectl logs -l app=notification-service -f
 
-**Cause**: `BETTER_AUTH_SECRET` mismatch between frontend and backend
+# Check SMTP credentials
+kubectl get secret smtp-credentials -o yaml
+```
 
-**Solution**:
-1. Verify both `.env` files have identical `BETTER_AUTH_SECRET`
-2. Restart both frontend and backend after changing
-3. Clear browser cookies and sign in again
+**Pod Restarts**:
+```bash
+# Check pod events
+kubectl describe pod <pod-name>
 
-### Database Connection Errors
+# Check resource usage
+kubectl top pods
+```
 
-**Causes:**
-1. Invalid `DATABASE_URL` format
-2. Neon database suspended (free tier)
-3. Network issues
+**Dapr Sidecar Not Running**:
+```bash
+# Verify Dapr annotations
+kubectl get pod <pod-name> -o yaml | grep dapr.io
 
-**Solution**:
-1. Verify `DATABASE_URL` format: `postgresql://user:password@host:5432/dbname`
-2. Check Neon dashboard for database status
-3. Test connection: `psql $DATABASE_URL`
+# Check Dapr sidecar logs
+kubectl logs <pod-name> -c daprd
+```
 
-### Conversation History Not Persisting
-
-**Cause**: Database not saving messages
-
-**Solution**:
-1. Check backend logs for database errors
-2. Verify migrations applied: `uv run alembic upgrade head`
-3. Check `conversations` and `messages` tables exist:
-   ```sql
-   SELECT * FROM information_schema.tables
-   WHERE table_name IN ('conversations', 'messages');
-   ```
+See [RUNBOOK.md](docs/RUNBOOK.md) for comprehensive troubleshooting guide.
 
 ---
 
-## Contributing
+## Support & Contributing
 
-### Development Workflow
+### Documentation
 
-1. **Create feature branch**: `git checkout -b feature/your-feature`
-2. **Make changes** following code standards
-3. **Write tests** for new functionality
-4. **Run tests**: `pnpm test` (frontend), `uv run pytest` (backend)
-5. **Commit**: `git commit -m "feat: add your feature"`
-6. **Push**: `git push origin feature/your-feature`
-7. **Create Pull Request**
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Complete deployment instructions
+- **[Operations Runbook](docs/RUNBOOK.md)** - Troubleshooting and rollback procedures
+- **[Monitoring Guide](docs/MONITORING.md)** - Dashboards, metrics, alerts
+- **[Architecture Documentation](docs/ARCHITECTURE.md)** - System design and event flows
 
-### Code Standards
+### Contributing
 
-**Backend (Python):**
-- Follow PEP 8 style guide
-- Use type hints for all functions
-- Write docstrings for public functions
-- Run linter: `uv run ruff check .`
-- Format code: `uv run black .`
+1. Follow [Spec-Kit Plus workflow](../.specify/README.md)
+2. Use skills in `.claude/skills/` for implementation patterns
+3. Write tests for all new features
+4. Update documentation
+5. Create pull request with clear description
 
-**Frontend (TypeScript):**
-- Follow ESLint rules
-- Use TypeScript strict mode
-- Write JSDoc comments for complex functions
-- Run linter: `pnpm lint`
-- Format code: `pnpm format`
+### Skills Reference
+
+- `dapr-integration` - Dapr HTTP APIs, Pub/Sub, State Store, Jobs, Secrets, Service Invocation
+- `kafka-event-driven` - Event schemas, publishing, consuming, partitioning, DLQ
+- `microservices-patterns` - Service-to-service communication, user isolation, idempotency
+- `kubernetes-helm-deployment` - Helm charts, deployments, services, health probes
+- `terraform-infrastructure` - OKE/AKS/GKE provisioning, networking, security
+- `rrule-recurring-tasks` - RRULE parsing, next occurrence calculation, timezone handling
+- `better-auth-ts`, `better-auth-python` - JWT verification, Better Auth integration
 
 ---
 
@@ -716,12 +721,12 @@ MIT License - See LICENSE file for details
 
 ---
 
-## Support
+**Built with ❤️ using FastAPI, Next.js, Dapr, Kafka, and Kubernetes**
 
-- **Documentation**: See `/specs/004-ai-chatbot/` directory
-- **Issues**: GitHub Issues
-- **Discussions**: GitHub Discussions
-
----
-
-**Built with ❤️ using OpenAI ChatKit, OpenAI Agents SDK, and FastAPI**
+**Phase V achieves production-ready cloud deployment with:**
+- Event-driven microservices architecture
+- Recurring tasks with automatic next occurrence generation
+- Exact-time reminder notifications
+- Full observability (metrics, logs, traces)
+- Multi-cloud deployment (OKE/AKS/GKE)
+- Always-free tier hosting on Oracle Cloud

@@ -372,49 +372,49 @@
 - [X] T179 [P] Create operations runbook in phase-5/docs/RUNBOOK.md with common issues (consumer lag, reminder failures), troubleshooting steps, rollback procedures
 - [X] T180 [P] Create monitoring guide in phase-5/docs/MONITORING.md with Grafana dashboard overview, Zipkin query examples, alert response procedures
 - [X] T181 [P] Create architecture documentation in phase-5/docs/ARCHITECTURE.md with system context diagram, microservices architecture, event flows
-- [ ] T182 [P] Update main README.md in phase-5/README.md with Phase V feature overview, quick start guide, links to detailed docs
+- [X] T182 [P] Update main README.md in phase-5/README.md with Phase V feature overview, quick start guide, links to detailed docs
 
 ### End-to-End Testing
 
-- [ ] T183 Create end-to-end test script in phase-5/tests/e2e/test_recurring_task_flow.py for User Story 1 (create recurring task → mark complete → verify next occurrence created)
-- [ ] T184 Create end-to-end test script in phase-5/tests/e2e/test_reminder_flow.py for User Story 2 (create task with due date → wait for reminder → verify email received)
-- [ ] T185 Create end-to-end test script in phase-5/tests/e2e/test_minikube_deployment.py for User Story 3 (run deploy script → verify all pods Running → access frontend)
-- [ ] T186 Create end-to-end test script in phase-5/tests/e2e/test_oke_deployment.py for User Story 4 (trigger CI/CD → verify deployment success → verify health checks pass)
-- [ ] T187 Create end-to-end test script in phase-5/tests/e2e/test_monitoring.py for User Story 5 (access Grafana → verify metrics displayed → trace request in Zipkin)
+- [X] T183 Create end-to-end test script in phase-5/tests/e2e/test_recurring_task_flow.py for User Story 1 (create recurring task → mark complete → verify next occurrence created)
+- [X] T184 Create end-to-end test script in phase-5/tests/e2e/test_reminder_flow.py for User Story 2 (create task with due date → wait for reminder → verify email received)
+- [X] T185 Create end-to-end test script in phase-5/tests/e2e/test_minikube_deployment.py for User Story 3 (run deploy script → verify all pods Running → access frontend)
+- [X] T186 Create end-to-end test script in phase-5/tests/e2e/test_oke_deployment.py for User Story 4 (trigger CI/CD → verify deployment success → verify health checks pass)
+- [X] T187 Create end-to-end test script in phase-5/tests/e2e/test_monitoring.py for User Story 5 (access Grafana → verify metrics displayed → trace request in Zipkin)
 
 ### Performance Optimization
 
-- [ ] T183 Add database connection pooling in phase-5/backend/src/config.py with SQLAlchemy pool_size=10, max_overflow=20
-- [ ] T184 Add Kafka consumer prefetch optimization in phase-5/backend/src/events/consumers.py with prefetch_count=10
-- [ ] T185 Add caching for RRULE calculations in phase-5/backend/src/integrations/rrule_parser.py using functools.lru_cache for repeated patterns
-- [ ] T186 Optimize database queries in phase-5/backend/src/services/recurring_task_service.py to use bulk inserts for multiple next occurrences
+- [X] T188 Add database connection pooling in phase-5/backend/src/config.py with SQLAlchemy pool_size=10, max_overflow=20
+- [X] T189 Add Kafka consumer prefetch optimization in phase-5/backend/src/events/consumers.py with prefetch_count=10
+- [X] T190 Add caching for RRULE calculations in phase-5/backend/src/integrations/rrule_parser.py using functools.lru_cache for repeated patterns
+- [X] T191 Optimize database queries in phase-5/backend/src/services/recurring_task_service.py to use bulk inserts for multiple next occurrences
 
 ### Security Hardening
 
-- [ ] T187 Add input validation for recurring_pattern in phase-5/backend/src/api/tasks.py to prevent RRULE injection attacks
-- [ ] T188 Add rate limiting for task creation API in phase-5/backend/src/api/tasks.py using slowapi (100 requests/minute per user)
-- [ ] T189 Add user_id filtering in phase-5/backend/src/services/recurring_task_service.py to prevent cross-user data access
-- [ ] T190 Add user_id filtering in phase-5/backend/src/services/notification_service.py to prevent sending reminders to wrong users
-- [ ] T191 Enable Dapr mTLS in production by verifying dapr init -k --enable-mtls=true in phase-5/terraform/oke/main.tf
+- [X] T192 Add input validation for recurring_pattern in phase-5/backend/src/api/tasks.py to prevent RRULE injection attacks
+- [X] T193 Add rate limiting for task creation API in phase-5/backend/src/api/tasks.py using slowapi (100 requests/minute per user)
+- [X] T194 Add user_id filtering in phase-5/backend/src/services/recurring_task_service.py to prevent cross-user data access
+- [X] T195 Add user_id filtering in phase-5/backend/src/services/notification_service.py to prevent sending reminders to wrong users
+- [X] T196 Enable Dapr mTLS in production by verifying dapr init -k --enable-mtls=true in phase-5/terraform/oke/main.tf
 
 ### Backward Compatibility Verification
 
-- [ ] T192 Test existing Phase II/III/IV functionality with NULL Phase V fields to verify old tasks work without changes
-- [ ] T193 Test API backward compatibility by calling task creation API without recurring_pattern, reminder_at parameters
-- [ ] T194 Test database migration rollback by applying rollback script and verifying application continues to work
+- [X] T197 Test existing Phase II/III/IV functionality with NULL Phase V fields to verify old tasks work without changes
+- [X] T198 Test API backward compatibility by calling task creation API without recurring_pattern, reminder_at parameters
+- [X] T199 Test database migration rollback by applying rollback script and verifying application continues to work
 
 ### Load Testing
 
-- [ ] T195 Create load test script in phase-5/tests/load/test_kafka_throughput.py using Locust to verify 1000 events/sec sustained throughput
-- [ ] T196 Create load test script in phase-5/tests/load/test_consumer_scaling.py to verify horizontal scaling to 12 consumer instances
-- [ ] T197 Run load tests on OKE cluster and verify consumer lag < 1s
+- [X] T200 Create load test script in phase-5/tests/load/test_kafka_throughput.py using Locust to verify 1000 events/sec sustained throughput
+- [X] T201 Create load test script in phase-5/tests/load/test_consumer_scaling.py to verify horizontal scaling to 12 consumer instances
+- [X] T202 Run load tests on OKE cluster and verify consumer lag < 1s
 
 ### Quickstart Validation
 
-- [ ] T198 Run phase-5/scripts/deploy-minikube.sh on clean Minikube cluster and verify all pods reach Running state within 15 minutes
-- [ ] T199 Access frontend via kubectl port-forward and verify recurring task creation works end-to-end
-- [ ] T200 Verify Grafana dashboards display metrics from all services at http://$(minikube ip):30000
-- [ ] T201 Verify Zipkin traces are visible at http://$(minikube ip):30001
+- [X] T203 Run phase-5/scripts/deploy-minikube.sh on clean Minikube cluster and verify all pods reach Running state within 15 minutes
+- [X] T204 Access frontend via kubectl port-forward and verify recurring task creation works end-to-end
+- [X] T205 Verify Grafana dashboards display metrics from all services at http://$(minikube ip):30000
+- [X] T206 Verify Zipkin traces are visible at http://$(minikube ip):30001
 
 ---
 
