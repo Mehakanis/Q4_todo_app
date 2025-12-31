@@ -1,0 +1,177 @@
+# Alertmanager Configuration
+# Task: T169 - Multi-channel notification routing (Slack, Email, PagerDuty)
+
+global:
+  # Global configuration
+  resolve_timeout: 5m
+  slack_api_url: '{{ .Values.alertmanager.slack.apiUrl }}'  # Set via Helm values
+
+  # SMTP configuration for email notifications
+  smtp_from: '{{ .Values.alertmanager.email.from }}'
+  smtp_smarthost: '{{ .Values.alertmanager.email.smtpHost }}:{{ .Values.alertmanager.email.smtpPort }}'
+  smtp_auth_username: '{{ .Values.alertmanager.email.username }}'
+  smtp_auth_password: '{{ .Values.alertmanager.email.password }}'
+  smtp_require_tls: true
+
+# Templates for notification messages
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Routing tree for alerts
+route:
+  # Default receiver (fallback)
+  receiver: 'ops-team-email'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service']
+
+  # Wait time before sending first notification
+  group_wait: 30s
+
+  # Wait time before sending notification about new alerts in group
+  group_interval: 5m
+
+  # Wait time before resending notification
+  repeat_interval: 4h
+
+  # Child routes (evaluated in order)
+  routes:
+    # CRITICAL alerts → PagerDuty (immediate escalation)
+    - match:
+        severity: critical
+      receiver: 'pagerduty'
+      continue: true  # Also send to other receivers
+      group_wait: 10s
+      repeat_interval: 30m
+
+    # WARNING alerts → Slack (team notification)
+    - match:
+        severity: warning
+      receiver: 'slack-warnings'
+      group_wait: 1m
+      repeat_interval: 2h
+
+    # INFO alerts → Email only (low priority)
+    - match:
+        severity: info
+      receiver: 'ops-team-email'
+      group_wait: 5m
+      repeat_interval: 12h
+
+    # SLO breach alerts → Slack + PagerDuty
+    - match_re:
+        slo: '.*'
+      receiver: 'slo-breach-team'
+      continue: false
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Kafka consumer lag → Slack
+    - match:
+        service: kafka
+      receiver: 'slack-kafka'
+      group_wait: 2m
+      repeat_interval: 1h
+
+    # Database alerts → PagerDuty + Email
+    - match:
+        service: database
+      receiver: 'database-team'
+      continue: false
+      group_wait: 30s
+      repeat_interval: 30m
+
+# Inhibition rules (suppress alerts)
+inhibit_rules:
+  # If service is down, don't alert on high latency
+  - source_match:
+      alertname: 'ServiceAvailabilityBelowSLO'
+    target_match:
+      alertname: 'ServiceLatencyAboveSLO'
+    equal: ['service']
+
+  # If Kafka is down, don't alert on consumer lag
+  - source_match:
+      alertname: 'KafkaDown'
+    target_match:
+      alertname: 'KafkaConsumerLagHigh'
+    equal: ['instance']
+
+  # If pod is restarting, don't alert on health check failures
+  - source_match:
+      alertname: 'PodRestartsHigh'
+    target_match_re:
+      alertname: '.*Unhealthy'
+    equal: ['pod']
+
+# Receivers (notification channels)
+receivers:
+  # PagerDuty for critical alerts
+  - name: 'pagerduty'
+    pagerduty_configs:
+      - service_key: '{{ .Values.alertmanager.pagerduty.serviceKey }}'
+        description: '{{ `{{ .CommonAnnotations.summary }}` }}'
+        details:
+          severity: '{{ `{{ .GroupLabels.severity }}` }}'
+          service: '{{ `{{ .GroupLabels.service }}` }}'
+          description: '{{ `{{ .CommonAnnotations.description }}` }}'
+          cluster: '{{ `{{ .GroupLabels.cluster }}` }}'
+
+  # Slack for warnings
+  - name: 'slack-warnings'
+    slack_configs:
+      - channel: '#todo-alerts-warnings'
+        title: 'WARNING: {{ `{{ .GroupLabels.alertname }}` }}'
+        text: '{{ `{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ end }}` }}'
+        color: 'warning'
+        send_resolved: true
+
+  # Slack for Kafka alerts
+  - name: 'slack-kafka'
+    slack_configs:
+      - channel: '#todo-kafka-alerts'
+        title: 'Kafka Alert: {{ `{{ .GroupLabels.alertname }}` }}'
+        text: '{{ `{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ end }}` }}'
+        color: 'danger'
+        send_resolved: true
+
+  # Email for ops team
+  - name: 'ops-team-email'
+    email_configs:
+      - to: '{{ .Values.alertmanager.email.opsTeam }}'
+        headers:
+          Subject: '[TODO-{{ `{{ .GroupLabels.severity | toUpper }}` }}] {{ `{{ .GroupLabels.alertname }}` }}'
+        html: |
+          <h2>Alert: {{ `{{ .GroupLabels.alertname }}` }}</h2>
+          <p><strong>Severity:</strong> {{ `{{ .GroupLabels.severity }}` }}</p>
+          <p><strong>Service:</strong> {{ `{{ .GroupLabels.service }}` }}</p>
+          <p><strong>Summary:</strong> {{ `{{ .CommonAnnotations.summary }}` }}</p>
+          <p><strong>Description:</strong> {{ `{{ .CommonAnnotations.description }}` }}</p>
+          <p><strong>Alerts:</strong></p>
+          <ul>
+          {{ `{{ range .Alerts }}` }}
+            <li>{{ `{{ .Annotations.summary }}` }}</li>
+          {{ `{{ end }}` }}
+          </ul>
+
+  # SLO breach team (Slack + PagerDuty)
+  - name: 'slo-breach-team'
+    slack_configs:
+      - channel: '#todo-slo-alerts'
+        title: 'SLO BREACH: {{ `{{ .GroupLabels.alertname }}` }}'
+        text: '{{ `{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ end }}` }}'
+        color: 'danger'
+        send_resolved: true
+    pagerduty_configs:
+      - service_key: '{{ .Values.alertmanager.pagerduty.sloServiceKey }}'
+        description: 'SLO Breach: {{ `{{ .CommonAnnotations.summary }}` }}'
+
+  # Database team (Email + PagerDuty)
+  - name: 'database-team'
+    email_configs:
+      - to: '{{ .Values.alertmanager.email.databaseTeam }}'
+        headers:
+          Subject: '[DATABASE-CRITICAL] {{ `{{ .GroupLabels.alertname }}` }}'
+    pagerduty_configs:
+      - service_key: '{{ .Values.alertmanager.pagerduty.databaseServiceKey }}'
+        description: 'Database Alert: {{ `{{ .CommonAnnotations.summary }}` }}'

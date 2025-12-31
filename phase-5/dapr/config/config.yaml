@@ -4,9 +4,11 @@ metadata:
   name: dapr-config
   namespace: default
 spec:
-  # Distributed tracing configuration
+  # Distributed tracing configuration (T154)
+  # Sampling rate: 100% for development, 10% for production
+  # Set via Helm values: dev: "1", prod: "0.1"
   tracing:
-    samplingRate: "1"  # 100% sampling for development (reduce to 0.1 for production)
+    samplingRate: "{{ .Values.dapr.tracing.samplingRate }}"  # Template for Helm
     zipkin:
       endpointAddress: "http://zipkin:9411/api/v2/spans"
     # Alternative: Use Jaeger

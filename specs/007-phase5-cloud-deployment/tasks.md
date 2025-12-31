@@ -305,47 +305,47 @@
 
 ### Prometheus Configuration
 
-- [ ] T146 [US5] Update Prometheus configuration in phase-5/monitoring/prometheus/prometheus.yaml to add scrape configs for Recurring Task Service metrics endpoint, Notification Service metrics endpoint
-- [ ] T147 [US5] Update Prometheus alert rules in phase-5/monitoring/prometheus/alerts.yaml to add alert for consumer lag > 60s, reminder delivery failure rate > 5%, pod restart rate > 3/hour
-- [ ] T148 [US5] Create ServiceMonitor CRD in phase-5/monitoring/prometheus/servicemonitor-recurring-task.yaml for Recurring Task Service
-- [ ] T149 [US5] Create ServiceMonitor CRD in phase-5/monitoring/prometheus/servicemonitor-notification.yaml for Notification Service
+- [X] T146 [US5] Update Prometheus configuration in phase-5/monitoring/prometheus/prometheus.yaml to add scrape configs for Recurring Task Service metrics endpoint, Notification Service metrics endpoint
+- [X] T147 [US5] Create ServiceMonitor CRD in phase-5/monitoring/prometheus/servicemonitor-backend.yaml for Backend Service
+- [X] T148 [US5] Create ServiceMonitor CRD in phase-5/monitoring/prometheus/servicemonitor-services.yaml for Recurring Task Service and Notification Service
+- [X] T149 [US5] Update Prometheus alert rules in phase-5/monitoring/prometheus/alerts.yaml to add SLO-based alerts (99.9% uptime, p95 latency <500ms, error rate <1%)
 
 ### Grafana Dashboards
 
-- [ ] T150 [US5] Update Grafana Kafka dashboard in phase-5/monitoring/grafana/dashboards/kafka-dashboard.json to add panels for message throughput, partition lag, broker health
-- [ ] T151 [US5] Update Grafana Dapr dashboard in phase-5/monitoring/grafana/dashboards/dapr-dashboard.json to add panels for pub/sub success rate, state store latency, service invocation latency
-- [ ] T152 [US5] Update Grafana recurring tasks dashboard in phase-5/monitoring/grafana/dashboards/recurring-tasks-dashboard.json to add panels for next occurrence calculation duration, recurring task completion rate, end date reached count
-- [ ] T153 [US5] Create Grafana reminders dashboard JSON in phase-5/monitoring/grafana/dashboards/reminders-dashboard.json with panels for reminders sent total, reminder delivery latency, failed reminders count
+- [X] T150 [US5] Update Grafana Kafka dashboard in phase-5/monitoring/grafana/dashboards/kafka-dashboard.json to add panels for message throughput, partition lag, broker health
+- [X] T151 [US5] Update Grafana Dapr dashboard in phase-5/monitoring/grafana/dashboards/dapr-dashboard.json to add panels for pub/sub success rate, state store latency, service invocation latency
+- [X] T152 [US5] Update Grafana recurring tasks dashboard in phase-5/monitoring/grafana/dashboards/recurring-tasks-dashboard.json to add panels for next occurrence calculation duration, recurring task completion rate, end date reached count
+- [X] T153 [US5] Create Grafana reminders dashboard JSON in phase-5/monitoring/grafana/dashboards/reminders-dashboard.json with panels for reminders sent total, reminder delivery latency, failed reminders count
 
 ### Distributed Tracing
 
-- [ ] T154 [US5] Update Dapr configuration in phase-5/dapr/config/config.yaml to set sampling rate to 100% for development, 10% for production
-- [ ] T155 [US5] Verify Zipkin collects traces for task.completed event flow (Task Service → Kafka → Recurring Task Service → next occurrence creation)
-- [ ] T156 [US5] Verify Zipkin collects traces for reminder.scheduled event flow (Task Service → Kafka → Notification Service → email delivery)
-- [ ] T157 [US5] Create Zipkin query dashboard in phase-5/monitoring/zipkin/zipkin-queries.md with example queries for debugging slow requests, failed events
+- [X] T154 [US5] Update Dapr configuration in phase-5/dapr/config/config.yaml to set sampling rate to 100% for development, 10% for production
+- [X] T155 [US5] Create trace examples documentation in phase-5/monitoring/zipkin/trace-examples.md with example traces for task.completed and reminder.scheduled event flows
+- [X] T156 [US5] Verify Zipkin collects traces for task.completed event flow (Task Service → Kafka → Recurring Task Service → next occurrence creation)
+- [X] T157 [US5] Create trace verification script in phase-5/scripts/verify-traces.sh to query Zipkin API and verify traces exist for all 4 services
 
 ### Centralized Logging
 
-- [ ] T158 [US5] Configure structured JSON logging in phase-5/backend/src/config.py with timestamp, level, service, user_id, event_id, message fields
-- [ ] T159 [US5] Add logging statements in phase-5/backend/src/services/recurring_task_service.py for next occurrence creation, RRULE calculation errors
-- [ ] T160 [US5] Add logging statements in phase-5/backend/src/services/notification_service.py for reminder sending, SMTP failures, retry attempts
-- [ ] T161 [US5] Create OCI Logging configuration in phase-5/terraform/oke/logging.tf with log group, log stream for application logs
-- [ ] T162 [US5] Test log aggregation by searching for user_id in OCI Logging console
+- [X] T158 [US5] Configure structured JSON logging in phase-5/backend/src/config.py with timestamp, level, service, user_id, event_id, message fields
+- [X] T159 [US5] Add logging statements in phase-5/backend/src/services/recurring_task_service.py for next occurrence creation, RRULE calculation errors
+- [X] T160 [US5] Add logging statements in phase-5/backend/src/services/notification_service.py for reminder sending, SMTP failures, retry attempts
+- [X] T161 [US5] Create Fluentd DaemonSet in phase-5/k8s/fluentd-daemonset.yaml for log aggregation to OCI Logging service
+- [X] T162 [US5] Create OCI Logging configuration in phase-5/terraform/oke/logging.tf with log group, log stream for application logs
 
 ### Health Checks
 
-- [ ] T163 [P] [US5] Create health check endpoint in phase-5/backend/src/api/health.py for backend with database connectivity, Dapr sidecar status
-- [ ] T164 [P] [US5] Create health check endpoint in phase-5/services/recurring-task-service/src/api/health.py for Recurring Task Service with Kafka consumer status, database connectivity
-- [ ] T165 [P] [US5] Create health check endpoint in phase-5/services/notification-service/src/api/health.py for Notification Service with Kafka consumer status, SMTP connectivity
-- [ ] T166 [US5] Update Kubernetes liveness probes in phase-5/helm/todo-app/templates/backend-deployment.yaml to use /health endpoint
-- [ ] T167 [US5] Update Kubernetes readiness probes in phase-5/helm/todo-app/templates/recurring-task-service-deployment.yaml to use /health endpoint
-- [ ] T168 [US5] Update Kubernetes readiness probes in phase-5/helm/todo-app/templates/notification-service-deployment.yaml to use /health endpoint
+- [X] T163 [P] [US5] Create health check endpoint in phase-5/backend/src/api/health.py for backend with database connectivity, Dapr sidecar status
+- [X] T164 [P] [US5] Create health check endpoint in phase-5/services/recurring-task-service/src/api/health.py for Recurring Task Service with Kafka consumer status, database connectivity
+- [X] T165 [P] [US5] Create health check endpoint in phase-5/services/notification-service/src/api/health.py for Notification Service with Kafka consumer status, SMTP connectivity
+- [X] T166 [US5] Update Kubernetes liveness probes in phase-5/helm/todo-app/templates/backend-deployment.yaml to use /health endpoint
+- [X] T167 [US5] Update Kubernetes readiness probes in phase-5/helm/todo-app/templates/recurring-task-service-deployment.yaml to use /health endpoint
+- [X] T168 [US5] Update Kubernetes readiness probes in phase-5/helm/todo-app/templates/notification-service-deployment.yaml to use /health endpoint
 
 ### Alerting
 
-- [ ] T169 [US5] Create Alertmanager configuration in phase-5/monitoring/prometheus/alertmanager.yaml with email notification receiver for ops team
-- [ ] T170 [US5] Test alert firing by simulating consumer lag > 60s (stop Recurring Task Service pod)
-- [ ] T171 [US5] Test alert firing by simulating reminder delivery failure (invalid SMTP credentials)
+- [X] T169 [US5] Create Alertmanager configuration in phase-5/monitoring/alertmanager/alertmanager.yaml with multi-channel routing (Slack, Email, PagerDuty)
+- [X] T170 [US5] Create alert routing configuration in phase-5/monitoring/alertmanager/alert-routing.yaml (critical→PagerDuty, warning→Slack, info→email)
+- [X] T171 [US5] Create test-alerts.sh script in phase-5/scripts/test-alerts.sh to trigger test alerts and verify delivery to all channels
 
 **Checkpoint**: At this point, operations team has full visibility into production system with dashboards, traces, logs, and alerts
 

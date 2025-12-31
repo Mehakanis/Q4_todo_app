@@ -1,0 +1,34 @@
+# ServiceMonitor CRD for Backend Service
+# Task: T147
+# Prometheus Operator ServiceMonitor for automatic service discovery
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: backend-monitor
+  namespace: default
+  labels:
+    app: backend
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: backend
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: http
+    - port: http
+      path: /health
+      interval: 15s
+      scrapeTimeout: 5s
+      scheme: http
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: 'http_.*'
+          action: keep
+  namespaceSelector:
+    matchNames:
+      - default

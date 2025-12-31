@@ -1,0 +1,67 @@
+# ServiceMonitor CRDs for Recurring Task Service and Notification Service
+# Task: T148
+# Prometheus Operator ServiceMonitor for automatic service discovery
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: recurring-task-service-monitor
+  namespace: default
+  labels:
+    app: recurring-task-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: recurring-task-service
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: http
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: 'recurring_task_.*|rrule_.*|event_processing_.*'
+          action: keep
+    - port: http
+      path: /health
+      interval: 15s
+      scrapeTimeout: 5s
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - default
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: notification-service-monitor
+  namespace: default
+  labels:
+    app: notification-service
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: notification-service
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: http
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: 'notification_.*|reminder_.*|email_.*|smtp_.*|dapr_jobs_.*'
+          action: keep
+    - port: http
+      path: /health
+      interval: 15s
+      scrapeTimeout: 5s
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - default

@@ -1,10 +1,60 @@
 # Prometheus Alert Rules for Phase V
-# Task: T104
+# Tasks: T104, T149
+# Updated with SLO-based alerts: 99.9% uptime, p95 latency <500ms, error rate <1%
 
 groups:
   - name: phase5_services
     interval: 30s
     rules:
+      # SLO-Based Alerts (T149)
+
+      # Alert when service availability drops below 99.9% (SLO breach)
+      - alert: ServiceAvailabilityBelowSLO
+        expr: |
+          (
+            sum(rate(http_requests_total{status!~"5.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) < 0.999
+        for: 5m
+        labels:
+          severity: critical
+          slo: availability
+        annotations:
+          summary: "Service {{ $labels.service }} availability below 99.9% SLO"
+          description: "Service {{ $labels.service }} availability is {{ $value | humanizePercentage }} (SLO: 99.9%)"
+
+      # Alert when p95 latency exceeds 500ms (SLO breach)
+      - alert: ServiceLatencyAboveSLO
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          slo: latency
+        annotations:
+          summary: "Service {{ $labels.service }} p95 latency above 500ms SLO"
+          description: "Service {{ $labels.service }} p95 latency is {{ $value }}s (SLO: 0.5s)"
+
+      # Alert when error rate exceeds 1% (SLO breach)
+      - alert: ServiceErrorRateAboveSLO
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          slo: error_rate
+        annotations:
+          summary: "Service {{ $labels.service }} error rate above 1% SLO"
+          description: "Service {{ $labels.service }} error rate is {{ $value | humanizePercentage }} (SLO: 1%)"
+
+      # Original Phase V Alerts
       # Alert when consumer lag exceeds 60 seconds
       - alert: KafkaConsumerLagHigh
         expr: kafka_consumer_lag_seconds > 60

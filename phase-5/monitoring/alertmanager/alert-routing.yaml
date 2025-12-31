@@ -1,0 +1,221 @@
+# Alert Routing Configuration
+# Task: T170 - Route alerts by severity: critical→PagerDuty, warning→Slack, info→email
+
+# This file documents the alert routing logic implemented in alertmanager.yaml
+# It serves as a reference for understanding alert flow and debugging routing issues
+
+## Routing Tree
+
+### Level 1: Severity-Based Routing (Primary)
+
+1. **CRITICAL Alerts** → PagerDuty (+ continue to other routes)
+   - Target: PagerDuty service key (on-call rotation)
+   - Group Wait: 10s (fast escalation)
+   - Repeat Interval: 30m (frequent reminders until resolved)
+   - Continue: true (also send to Slack if applicable)
+
+   Examples:
+   - ServiceAvailabilityBelowSLO (99.9% SLO breach)
+   - ServiceErrorRateAboveSLO (>1% error rate)
+   - ReminderDeliveryFailed (>5% failure rate)
+   - DaprComponentUnhealthy
+   - RecurringTaskCreationStalled
+   - KafkaDown
+   - DatabaseConnectionPoolExhausted
+
+2. **WARNING Alerts** → Slack (#todo-alerts-warnings)
+   - Target: Slack channel for team visibility
+   - Group Wait: 1m
+   - Repeat Interval: 2h
+   - Send Resolved: true
+
+   Examples:
+   - ServiceLatencyAboveSLO (p95 latency >500ms)
+   - KafkaConsumerLagHigh (>60s lag)
+   - PodRestartsHigh (>3 restarts/hour)
+   - NextOccurrenceCalculationSlow (>1s)
+   - BackendMemoryUsageHigh (>90%)
+   - BackendCPUUsageHigh (>80%)
+   - EventProcessingLatencyHigh (>5s)
+
+3. **INFO Alerts** → Email (ops-team@example.com)
+   - Target: Email for low-priority notifications
+   - Group Wait: 5m (batch similar alerts)
+   - Repeat Interval: 12h (infrequent reminders)
+
+   Examples:
+   - Informational alerts
+   - Maintenance notifications
+   - Capacity planning alerts
+
+### Level 2: Special Route Overrides
+
+These routes take precedence over severity-based routing:
+
+1. **SLO Breach Alerts** → Slack + PagerDuty (slo-breach-team)
+   - Matcher: `slo: .*` (any SLO label)
+   - Targets:
+     - Slack: #todo-slo-alerts
+     - PagerDuty: slo-specific service key
+   - Continue: false (don't fall through to other routes)
+   - Group Wait: 10s
+   - Repeat Interval: 1h
+
+   Examples:
+   - ServiceAvailabilityBelowSLO (slo: availability)
+   - ServiceLatencyAboveSLO (slo: latency)
+   - ServiceErrorRateAboveSLO (slo: error_rate)
+
+2. **Kafka Alerts** → Slack (#todo-kafka-alerts)
+   - Matcher: `service: kafka`
+   - Target: Kafka-specific Slack channel
+   - Group Wait: 2m
+   - Repeat Interval: 1h
+
+   Examples:
+   - KafkaConsumerLagHigh
+   - KafkaDown
+   - Kafka partition rebalancing
+
+3. **Database Alerts** → Email + PagerDuty (database-team)
+   - Matcher: `service: database`
+   - Targets:
+     - Email: database-team@example.com
+     - PagerDuty: database-specific service key
+   - Continue: false
+   - Group Wait: 30s
+   - Repeat Interval: 30m
+
+   Examples:
+   - DatabaseConnectionPoolExhausted
+   - Database connection failures
+   - Slow queries
+
+## Inhibition Rules (Alert Suppression)
+
+These rules prevent alert noise by suppressing child alerts when parent alerts are firing:
+
+1. **Service Down suppresses Latency Alerts**
+   - Source: ServiceAvailabilityBelowSLO
+   - Target: ServiceLatencyAboveSLO
+   - Rationale: If service is down, high latency is expected
+
+2. **Kafka Down suppresses Consumer Lag Alerts**
+   - Source: KafkaDown
+   - Target: KafkaConsumerLagHigh
+   - Rationale: If Kafka is down, consumer lag will increase
+
+3. **Pod Restarts suppress Health Check Failures**
+   - Source: PodRestartsHigh
+   - Target: .*Unhealthy (regex)
+   - Rationale: If pod is restarting, health checks will fail
+
+## Notification Channels
+
+### PagerDuty Integration
+
+**Service Keys** (set via Helm values):
+- `alertmanager.pagerduty.serviceKey`: Default critical alerts
+- `alertmanager.pagerduty.sloServiceKey`: SLO breach alerts
+- `alertmanager.pagerduty.databaseServiceKey`: Database alerts
+
+**Incident Details**:
+- Summary: Alert annotation summary
+- Description: Full alert description
+- Severity: critical/warning/info
+- Service: Affected service name
+- Cluster: Kubernetes cluster name
+
+**Escalation Policy**:
+- Immediate notification to on-call engineer
+- Escalate to secondary on-call after 15 minutes
+- Escalate to engineering manager after 30 minutes
+
+### Slack Integration
+
+**Channels**:
+- `#todo-alerts-warnings`: Warning-level alerts (team visibility)
+- `#todo-slo-alerts`: SLO breach alerts (high priority)
+- `#todo-kafka-alerts`: Kafka-specific alerts (Kafka team)
+
+**Message Format**:
+- Title: Alert name
+- Text: Summary + description for all firing alerts
+- Color: danger (critical/warning) or warning (info)
+- Send Resolved: true (notify when alert resolves)
+
+**Webhooks** (set via Helm values):
+- `alertmanager.slack.apiUrl`: Slack incoming webhook URL
+
+### Email Integration
+
+**Recipients**:
+- `ops-team@example.com`: Default ops team (info alerts)
+- `database-team@example.com`: Database specialists (database alerts)
+
+**Email Format**:
+- Subject: `[TODO-{SEVERITY}] {ALERT_NAME}`
+- Body: HTML-formatted alert details with summary, description, affected services
+
+**SMTP Configuration** (set via Helm values):
+- `alertmanager.email.smtpHost`: SMTP server hostname
+- `alertmanager.email.smtpPort`: SMTP port (587 for TLS)
+- `alertmanager.email.username`: SMTP username
+- `alertmanager.email.password`: SMTP password (from secret)
+- `alertmanager.email.from`: Sender email address
+
+## Helm Values Example
+
+```yaml
+alertmanager:
+  slack:
+    apiUrl: "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+
+  email:
+    smtpHost: "smtp.gmail.com"
+    smtpPort: 587
+    username: "alerts@example.com"
+    password: "{{ .Values.secrets.smtpPassword }}"
+    from: "Todo Alerts <alerts@example.com>"
+    opsTeam: "ops-team@example.com"
+    databaseTeam: "database-team@example.com"
+
+  pagerduty:
+    serviceKey: "{{ .Values.secrets.pagerdutyServiceKey }}"
+    sloServiceKey: "{{ .Values.secrets.pagerdutyS LOServiceKey }}"
+    databaseServiceKey: "{{ .Values.secrets.pagerdutyDatabaseServiceKey }}"
+```
+
+## Testing Alert Routing
+
+See `scripts/test-alerts.sh` for automated testing of all alert routing paths.
+
+## Troubleshooting
+
+### Alerts not reaching PagerDuty
+1. Verify service key is correct: `kubectl get secret alertmanager-config -o yaml`
+2. Check Alertmanager logs: `kubectl logs -l app=alertmanager`
+3. Test PagerDuty integration: `curl -X POST https://events.pagerduty.com/v2/enqueue -H 'Content-Type: application/json' -d '{"routing_key":"YOUR_KEY","event_action":"trigger","payload":{"summary":"Test alert","severity":"critical","source":"test"}}'`
+
+### Alerts not reaching Slack
+1. Verify webhook URL is correct
+2. Check Slack channel exists and bot has access
+3. Test webhook: `curl -X POST -H 'Content-Type: application/json' -d '{"text":"Test alert"}' YOUR_WEBHOOK_URL`
+
+### Alerts not reaching Email
+1. Verify SMTP credentials
+2. Check SMTP server allows connections from cluster
+3. Verify email addresses are correct
+4. Check spam folder
+
+### Too many duplicate alerts
+1. Increase `group_wait` time to batch similar alerts
+2. Increase `group_interval` to reduce notification frequency
+3. Add inhibition rules to suppress child alerts
+4. Adjust `repeat_interval` to reduce reminder frequency
+
+### Missing expected alerts
+1. Check Prometheus alert rules are loaded: `kubectl get prometheusrule`
+2. Verify alert is firing: Prometheus UI → Alerts tab
+3. Check Alertmanager routing: Alertmanager UI → Routing tree
+4. Verify receiver configuration is correct
