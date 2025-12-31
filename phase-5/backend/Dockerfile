@@ -43,10 +43,11 @@ LABEL description="Production-ready FastAPI backend for Todo application"
 # Create non-root user for security
 RUN groupadd -r todoapp && useradd -r -g todoapp -u 1001 todoapp
 
-# Install only runtime dependencies
+# Install only runtime dependencies (Phase V: Added ca-certificates for Dapr/Kafka)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory

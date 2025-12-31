@@ -1,0 +1,131 @@
+# Prometheus Configuration for Phase V
+# Tasks: T103
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'minikube'
+    environment: 'local'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# Load alerting rules
+rule_files:
+  - "/etc/prometheus/alerts.yaml"
+
+# Scrape configurations
+scrape_configs:
+  # Scrape Dapr sidecar metrics
+  - job_name: 'dapr-sidecars'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_dapr_io_enabled]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_ip]
+        action: replace
+        regex: (.+)
+        target_label: __address__
+        replacement: $1:9090
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_annotation_dapr_io_app_id]
+        action: replace
+        target_label: app_id
+
+  # Scrape Kafka metrics (via JMX Exporter)
+  - job_name: 'kafka'
+    static_configs:
+      - targets:
+          - 'kafka:9308'  # Kafka JMX exporter port
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'kafka_.*'
+        action: keep
+
+  # Scrape backend service metrics
+  - job_name: 'backend'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: backend
+      - source_labels: [__meta_kubernetes_pod_ip]
+        action: replace
+        regex: (.+)
+        target_label: __address__
+        replacement: $1:8000
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+
+  # Scrape recurring task service metrics
+  - job_name: 'recurring-task-service'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: recurring-task-service
+      - source_labels: [__meta_kubernetes_pod_ip]
+        action: replace
+        regex: (.+)
+        target_label: __address__
+        replacement: $1:8001
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+
+  # Scrape notification service metrics
+  - job_name: 'notification-service'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        action: keep
+        regex: notification-service
+      - source_labels: [__meta_kubernetes_pod_ip]
+        action: replace
+        regex: (.+)
+        target_label: __address__
+        replacement: $1:8002
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: pod
+
+  # Scrape Kubernetes metrics
+  - job_name: 'kubernetes-apiservers'
+    kubernetes_sd_configs:
+      - role: endpoints
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: default;kubernetes;https
+
+  # Scrape kubelet metrics
+  - job_name: 'kubernetes-nodes'
+    kubernetes_sd_configs:
+      - role: node
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - action: labelmap
+        regex: __meta_kubernetes_node_label_(.+)

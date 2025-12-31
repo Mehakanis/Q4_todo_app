@@ -190,42 +190,42 @@
 
 ### Minikube Deployment Script
 
-- [ ] T087 [US3] Create Minikube deployment script phase-5/scripts/deploy-minikube.sh with Minikube start command (4 CPUs, 8GB RAM, Docker driver)
-- [ ] T088 [US3] Add Dapr installation step in phase-5/scripts/deploy-minikube.sh using dapr init -k --runtime-version 1.12 --enable-ha=false
-- [ ] T089 [US3] Add Kafka deployment step in phase-5/scripts/deploy-minikube.sh using Bitnami Helm chart with persistence 10Gi, replicaCount 1
-- [ ] T090 [US3] Add Kafka topic creation in phase-5/scripts/deploy-minikube.sh for task-events, reminders, task-updates topics (12 partitions, 7-day retention)
-- [ ] T091 [US3] Add Dapr components deployment in phase-5/scripts/deploy-minikube.sh using kubectl apply for all 5 components
-- [ ] T092 [US3] Add application deployment in phase-5/scripts/deploy-minikube.sh using Helm install with values-minikube.yaml
-- [ ] T093 [US3] Add monitoring stack deployment in phase-5/scripts/deploy-minikube.sh using Prometheus Helm chart, Grafana, Zipkin
-- [ ] T094 [US3] Add verification step in phase-5/scripts/deploy-minikube.sh with kubectl get pods, kubectl get daprcomponents
-- [ ] T095 [US3] Make script executable and test on clean Minikube cluster
+- [X] T087 [US3] Create Minikube deployment script phase-5/scripts/deploy-minikube.sh with Minikube start command (4 CPUs, 8GB RAM, Docker driver)
+- [X] T088 [US3] Add Dapr installation step in phase-5/scripts/deploy-minikube.sh using dapr init -k --runtime-version 1.12 --enable-ha=false
+- [X] T089 [US3] Add Kafka deployment step in phase-5/scripts/deploy-minikube.sh using Bitnami Helm chart with persistence 10Gi, replicaCount 1
+- [X] T090 [US3] Add Kafka topic creation in phase-5/scripts/deploy-minikube.sh for task-events, reminders, task-updates topics (12 partitions, 7-day retention)
+- [X] T091 [US3] Add Dapr components deployment in phase-5/scripts/deploy-minikube.sh using kubectl apply for all 5 components
+- [X] T092 [US3] Add application deployment in phase-5/scripts/deploy-minikube.sh using Helm install with values-minikube.yaml
+- [X] T093 [US3] Add monitoring stack deployment in phase-5/scripts/deploy-minikube.sh using Prometheus Helm chart, Grafana, Zipkin
+- [X] T094 [US3] Add verification step in phase-5/scripts/deploy-minikube.sh with kubectl get pods, kubectl get daprcomponents
+- [X] T095 [US3] Make script executable and test on clean Minikube cluster
 
 ### Helm Charts for Minikube
 
-- [ ] T096 [P] [US3] Create Helm Chart.yaml in phase-5/helm/todo-app/Chart.yaml with Phase V metadata
-- [ ] T097 [P] [US3] Create Helm values-minikube.yaml in phase-5/helm/todo-app/values-minikube.yaml with Minikube-specific configuration (NodePort service, resource limits)
-- [ ] T098 [P] [US3] Create Recurring Task Service deployment template in phase-5/helm/todo-app/templates/recurring-task-service-deployment.yaml with Dapr annotations, resource requests/limits
-- [ ] T099 [P] [US3] Create Notification Service deployment template in phase-5/helm/todo-app/templates/notification-service-deployment.yaml with Dapr annotations, resource requests/limits
-- [ ] T100 [P] [US3] Create Dapr components template in phase-5/helm/todo-app/templates/dapr-components.yaml with all 5 component YAMLs
-- [ ] T101 [P] [US3] Update existing backend deployment template in phase-5/helm/todo-app/templates/backend-deployment.yaml to add Dapr sidecar injection annotation
-- [ ] T102 [P] [US3] Update existing frontend deployment template in phase-5/helm/todo-app/templates/frontend-deployment.yaml to add Dapr sidecar injection annotation
+- [X] T096 [P] [US3] Create Helm Chart.yaml in phase-5/helm/todo-app/Chart.yaml with Phase V metadata
+- [X] T097 [P] [US3] Create Helm values-minikube.yaml in phase-5/helm/todo-app/values-minikube.yaml with Minikube-specific configuration (NodePort service, resource limits)
+- [X] T098 [P] [US3] Create Recurring Task Service deployment template in phase-5/helm/todo-app/templates/recurring-task-service-deployment.yaml with Dapr annotations, resource requests/limits
+- [X] T099 [P] [US3] Create Notification Service deployment template in phase-5/helm/todo-app/templates/notification-service-deployment.yaml with Dapr annotations, resource requests/limits
+- [X] T100 [P] [US3] Create Dapr components template in phase-5/helm/todo-app/templates/dapr-components.yaml with all 5 component YAMLs
+- [X] T101 [P] [US3] Update existing backend deployment template in phase-5/helm/todo-app/templates/backend-deployment.yaml to add Dapr sidecar injection annotation
+- [X] T102 [P] [US3] Update existing frontend deployment template in phase-5/helm/todo-app/templates/frontend-deployment.yaml to add Dapr sidecar injection annotation
 
 ### Monitoring for Minikube
 
-- [ ] T103 [P] [US3] Create Prometheus configuration in phase-5/monitoring/prometheus/prometheus.yaml with scrape configs for Dapr sidecars, Kafka metrics
-- [ ] T104 [P] [US3] Create Prometheus alert rules in phase-5/monitoring/prometheus/alerts.yaml for Phase V services (consumer lag > 60s, reminder delivery failures, pod restarts)
-- [ ] T105 [P] [US3] Create Grafana Kafka dashboard JSON in phase-5/monitoring/grafana/dashboards/kafka-dashboard.json with topic metrics, consumer lag, partition distribution
-- [ ] T106 [P] [US3] Create Grafana Dapr dashboard JSON in phase-5/monitoring/grafana/dashboards/dapr-dashboard.json with component health, service invocation metrics
-- [ ] T107 [P] [US3] Create Grafana recurring tasks dashboard JSON in phase-5/monitoring/grafana/dashboards/recurring-tasks-dashboard.json with creation rate, next occurrence distribution
-- [ ] T108 [P] [US3] Create Grafana datasources YAML in phase-5/monitoring/grafana/datasources.yaml with Prometheus datasource
-- [ ] T109 [P] [US3] Create Zipkin deployment YAML in phase-5/monitoring/zipkin/zipkin.yaml with NodePort service for Minikube
+- [X] T103 [P] [US3] Create Prometheus configuration in phase-5/monitoring/prometheus/prometheus.yaml with scrape configs for Dapr sidecars, Kafka metrics
+- [X] T104 [P] [US3] Create Prometheus alert rules in phase-5/monitoring/prometheus/alerts.yaml for Phase V services (consumer lag > 60s, reminder delivery failures, pod restarts)
+- [X] T105 [P] [US3] Create Grafana Kafka dashboard JSON in phase-5/monitoring/grafana/dashboards/kafka-dashboard.json with topic metrics, consumer lag, partition distribution
+- [X] T106 [P] [US3] Create Grafana Dapr dashboard JSON in phase-5/monitoring/grafana/dashboards/dapr-dashboard.json with component health, service invocation metrics
+- [X] T107 [P] [US3] Create Grafana recurring tasks dashboard JSON in phase-5/monitoring/grafana/dashboards/recurring-tasks-dashboard.json with creation rate, next occurrence distribution
+- [X] T108 [P] [US3] Create Grafana datasources YAML in phase-5/monitoring/grafana/datasources.yaml with Prometheus datasource
+- [X] T109 [P] [US3] Create Zipkin deployment YAML in phase-5/monitoring/zipkin/zipkin.yaml with NodePort service for Minikube
 
 ### Docker and Configuration
 
-- [ ] T110 [US3] Update backend Dockerfile in phase-5/backend/Dockerfile to add python-dateutil dependency, Dapr SDK
-- [ ] T111 [US3] Create Recurring Task Service Dockerfile in phase-5/services/recurring-task-service/Dockerfile
-- [ ] T112 [US3] Create Notification Service Dockerfile in phase-5/services/notification-service/Dockerfile
-- [ ] T113 [US3] Update backend config.py in phase-5/backend/src/config.py to add Kafka broker URLs, Dapr HTTP port, SMTP credentials from environment variables
+- [X] T110 [US3] Update backend Dockerfile in phase-5/backend/Dockerfile to add python-dateutil dependency, Dapr SDK
+- [X] T111 [US3] Create Recurring Task Service Dockerfile in phase-5/services/recurring-task-service/Dockerfile
+- [X] T112 [US3] Create Notification Service Dockerfile in phase-5/services/notification-service/Dockerfile
+- [X] T113 [US3] Update backend config.py in phase-5/backend/src/config.py to add Kafka broker URLs, Dapr HTTP port, SMTP credentials from environment variables
 
 **Checkpoint**: At this point, developers can deploy entire stack to Minikube and test recurring tasks + reminders locally
 

@@ -1,0 +1,222 @@
+# Helm Values for Minikube Deployment
+# Phase V - User Story 3 (T097)
+
+# Global settings
+global:
+  environment: minikube
+  dapr:
+    enabled: true
+    port: 3500
+    config: "dapr-config"
+
+# Backend Service
+backend:
+  name: backend
+  replicas: 1
+  image:
+    repository: todo-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8000
+  service:
+    type: NodePort
+    port: 8000
+    nodePort: 30080
+  env:
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: database-secrets
+          key: url
+    - name: DAPR_HTTP_PORT
+      value: "3500"
+    - name: KAFKA_BROKERS
+      value: "kafka:9092"
+    - name: ENVIRONMENT
+      value: "minikube"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  dapr:
+    enabled: true
+    appId: "backend"
+    appPort: "8000"
+    config: "dapr-config"
+    logLevel: "info"
+
+# Frontend Service
+frontend:
+  name: frontend
+  replicas: 1
+  image:
+    repository: todo-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 3000
+  service:
+    type: NodePort
+    port: 3000
+    nodePort: 30030
+  env:
+    - name: NEXT_PUBLIC_API_URL
+      value: "http://backend:8000"
+    - name: NEXT_PUBLIC_APP_URL
+      value: "http://localhost:3000"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+  dapr:
+    enabled: true
+    appId: "frontend"
+    appPort: "3000"
+    config: "dapr-config"
+
+# Recurring Task Service (NEW - Phase V)
+recurringTaskService:
+  name: recurring-task-service
+  replicas: 1
+  image:
+    repository: recurring-task-service
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8001
+  service:
+    type: ClusterIP
+    port: 8001
+  env:
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: database-secrets
+          key: url
+    - name: DAPR_HTTP_PORT
+      value: "3500"
+    - name: KAFKA_BROKERS
+      value: "kafka:9092"
+    - name: SERVICE_NAME
+      value: "recurring-task-service"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+  dapr:
+    enabled: true
+    appId: "recurring-task-service"
+    appPort: "8001"
+    config: "dapr-config"
+    logLevel: "info"
+
+# Notification Service (NEW - Phase V)
+notificationService:
+  name: notification-service
+  replicas: 1
+  image:
+    repository: notification-service
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 8002
+  service:
+    type: ClusterIP
+    port: 8002
+  env:
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: database-secrets
+          key: url
+    - name: DAPR_HTTP_PORT
+      value: "3500"
+    - name: KAFKA_BROKERS
+      value: "kafka:9092"
+    - name: SERVICE_NAME
+      value: "notification-service"
+    - name: SMTP_HOST
+      value: "smtp.gmail.com"
+    - name: SMTP_PORT
+      value: "587"
+    - name: SMTP_USER
+      valueFrom:
+        secretKeyRef:
+          name: smtp-secrets
+          key: user
+    - name: SMTP_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: smtp-secrets
+          key: password
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+  dapr:
+    enabled: true
+    appId: "notification-service"
+    appPort: "8002"
+    config: "dapr-config"
+    logLevel: "info"
+
+# Dapr Components
+dapr:
+  components:
+    pubsub:
+      enabled: true
+      name: "kafka-pubsub"
+      type: "pubsub.kafka"
+      metadata:
+        - name: "brokers"
+          value: "kafka:9092"
+        - name: "consumerGroup"
+          value: "todo-service"
+        - name: "maxRetries"
+          value: "3"
+    statestore:
+      enabled: true
+      name: "statestore"
+      type: "state.postgresql"
+      metadata:
+        - name: "connectionString"
+          secretKeyRef:
+            name: "database-secrets"
+            key: "url"
+    secrets:
+      enabled: true
+      name: "kubernetes-secrets"
+      type: "secretstores.kubernetes"
+
+# Secrets (for Minikube - use kubectl create secret)
+secrets:
+  database:
+    url: "postgresql://user:password@neon-postgres:5432/todo"
+  smtp:
+    user: "your-email@gmail.com"
+    password: "your-app-password"
+
+# Health Checks
+healthChecks:
+  enabled: true
+  livenessProbe:
+    httpGet:
+      path: /health/live
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /health/ready
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 5

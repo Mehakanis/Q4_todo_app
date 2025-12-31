@@ -1,0 +1,125 @@
+# Prometheus Alert Rules for Phase V
+# Task: T104
+
+groups:
+  - name: phase5_services
+    interval: 30s
+    rules:
+      # Alert when consumer lag exceeds 60 seconds
+      - alert: KafkaConsumerLagHigh
+        expr: kafka_consumer_lag_seconds > 60
+        for: 2m
+        labels:
+          severity: warning
+          service: kafka
+        annotations:
+          summary: "Kafka consumer lag is high (instance {{ $labels.instance }})"
+          description: "Consumer lag for {{ $labels.topic }} is {{ $value }} seconds (threshold: 60s)"
+
+      # Alert when reminder delivery fails
+      - alert: ReminderDeliveryFailed
+        expr: rate(reminder_delivery_failures_total[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+          service: notification-service
+        annotations:
+          summary: "Reminder delivery failure rate is high"
+          description: "Reminder delivery failure rate is {{ $value }} (threshold: 5%)"
+
+      # Alert when pod restarts frequently
+      - alert: PodRestartsHigh
+        expr: rate(kube_pod_container_status_restarts_total[1h]) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.pod }} is restarting frequently"
+          description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last hour (threshold: 3)"
+
+      # Alert when Dapr component is unhealthy
+      - alert: DaprComponentUnhealthy
+        expr: dapr_component_loaded{status="failed"} > 0
+        for: 2m
+        labels:
+          severity: critical
+          service: dapr
+        annotations:
+          summary: "Dapr component {{ $labels.component }} is unhealthy"
+          description: "Dapr component {{ $labels.component }} failed to load"
+
+      # Alert when next occurrence calculation takes too long
+      - alert: NextOccurrenceCalculationSlow
+        expr: histogram_quantile(0.95, rate(next_occurrence_calculation_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: recurring-task-service
+        annotations:
+          summary: "Next occurrence calculation is slow"
+          description: "95th percentile calculation duration is {{ $value }}s (threshold: 1s)"
+
+      # Alert when recurring task creation rate drops to zero
+      - alert: RecurringTaskCreationStalled
+        expr: rate(recurring_tasks_created_total[10m]) == 0 and rate(task_completed_events_total[10m]) > 0
+        for: 10m
+        labels:
+          severity: critical
+          service: recurring-task-service
+        annotations:
+          summary: "Recurring task creation has stalled"
+          description: "No recurring tasks created in 10 minutes despite task completion events"
+
+      # Alert when backend pod memory usage is high
+      - alert: BackendMemoryUsageHigh
+        expr: container_memory_usage_bytes{pod=~"backend.*"} / container_spec_memory_limit_bytes{pod=~"backend.*"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Backend pod memory usage is high"
+          description: "Backend pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      # Alert when backend pod CPU usage is high
+      - alert: BackendCPUUsageHigh
+        expr: rate(container_cpu_usage_seconds_total{pod=~"backend.*"}[5m]) / container_spec_cpu_quota{pod=~"backend.*"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Backend pod CPU usage is high"
+          description: "Backend pod {{ $labels.pod }} CPU usage is {{ $value | humanizePercentage }} (threshold: 80%)"
+
+      # Alert when event processing latency is high
+      - alert: EventProcessingLatencyHigh
+        expr: histogram_quantile(0.95, rate(event_processing_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event processing latency is high"
+          description: "95th percentile event processing latency is {{ $value }}s (threshold: 5s)"
+
+      # Alert when Kafka is down
+      - alert: KafkaDown
+        expr: up{job="kafka"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: kafka
+        annotations:
+          summary: "Kafka is down"
+          description: "Kafka instance {{ $labels.instance }} is not responding"
+
+      # Alert when database connection pool is exhausted
+      - alert: DatabaseConnectionPoolExhausted
+        expr: database_connection_pool_active >= database_connection_pool_max
+        for: 2m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "Database connection pool is exhausted"
+          description: "All {{ $value }} database connections are in use"

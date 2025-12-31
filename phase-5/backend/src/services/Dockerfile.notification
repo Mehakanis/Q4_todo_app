@@ -1,0 +1,46 @@
+# Dockerfile for Notification Service
+# Phase V - User Story 3 (T112)
+
+FROM python:3.13-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY ../../pyproject.toml ../../uv.lock ./
+RUN pip install --no-cache-dir uv==0.5.0 && \
+    uv sync --frozen --no-dev
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN groupadd -r notification && useradd -r -g notification -u 1002 notification && \
+    chown -R notification:notification /app
+
+USER notification
+
+# Environment variables
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Expose port
+EXPOSE 8002
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8002/health/live || exit 1
+
+# Run the service
+CMD ["uvicorn", "notification_service:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8002", \
+     "--log-level", "info"]

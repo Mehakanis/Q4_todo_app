@@ -1,0 +1,27 @@
+# Grafana Datasources Configuration for Phase V
+# Task: T108
+#
+# This file configures the Prometheus datasource for Grafana dashboards.
+# It enables Grafana to query metrics from Prometheus for all monitoring dashboards.
+
+apiVersion: 1
+
+datasources:
+  # Prometheus datasource - default for all dashboards
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.45.0
+      timeInterval: 15s  # Matches prometheus.yaml scrape_interval
+      queryTimeout: 60s
+      incrementalQuerying: true
+      disableRecordingRules: false
+      customQueryParameters: ''
+    version: 1
