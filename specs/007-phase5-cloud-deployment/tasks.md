@@ -368,8 +368,8 @@
 
 ### Documentation
 
-- [ ] T178 [P] Create deployment documentation in phase-5/docs/DEPLOYMENT.md with Minikube deployment steps, OKE deployment steps, AKS/GKE deployment steps
-- [ ] T179 [P] Create operations runbook in phase-5/docs/RUNBOOK.md with common issues (consumer lag, reminder failures), troubleshooting steps, rollback procedures
+- [X] T178 [P] Create deployment documentation in phase-5/docs/DEPLOYMENT.md with Minikube deployment steps, OKE deployment steps, AKS/GKE deployment steps
+- [X] T179 [P] Create operations runbook in phase-5/docs/RUNBOOK.md with common issues (consumer lag, reminder failures), troubleshooting steps, rollback procedures
 - [ ] T180 [P] Create monitoring guide in phase-5/docs/MONITORING.md with Grafana dashboard overview, Zipkin query examples, alert response procedures
 - [ ] T181 [P] Create architecture documentation in phase-5/docs/ARCHITECTURE.md with system context diagram, microservices architecture, event flows
 - [ ] T182 [P] Update main README.md in phase-5/README.md with Phase V feature overview, quick start guide, links to detailed docs
