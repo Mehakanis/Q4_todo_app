@@ -359,19 +359,19 @@
 
 **Purpose**: Verify that Intermediate Level features from Phase II work correctly with Phase V features (recurring tasks, reminders)
 
-- [ ] T172 [P] Verify task filtering by priority works with recurring tasks in phase-5/frontend/src/components/TaskList.tsx (filter "high priority recurring tasks")
-- [ ] T173 [P] Verify task filtering by tags works with recurring task instances in phase-5/frontend/src/components/TaskList.tsx
-- [ ] T174 [P] Verify task search includes recurring_pattern in searchable fields in phase-5/backend/src/api/tasks.py (search "daily recurring tasks")
-- [ ] T175 [P] Verify task sorting includes next_occurrence field for recurring tasks in phase-5/backend/src/api/tasks.py (sort by next occurrence date)
-- [ ] T176 [P] Verify task filtering by due_date includes next_occurrence for recurring tasks in phase-5/backend/src/api/tasks.py
-- [ ] T177 [P] Add integration tests for Intermediate features with Phase V features in phase-5/backend/tests/integration/test_intermediate_features_phase5.py covering filtering, sorting, and search with recurring tasks and reminders
+- [X] T172 [P] Verify task filtering by priority works with recurring tasks in phase-5/frontend/src/components/TaskList.tsx (filter "high priority recurring tasks")
+- [X] T173 [P] Verify task filtering by tags works with recurring task instances in phase-5/frontend/src/components/TaskList.tsx
+- [X] T174 [P] Verify task search includes recurring_pattern in searchable fields in phase-5/backend/src/api/tasks.py (search "daily recurring tasks")
+- [X] T175 [P] Verify task sorting includes next_occurrence field for recurring tasks in phase-5/backend/src/api/tasks.py (sort by next occurrence date)
+- [X] T176 [P] Verify task filtering by due_date includes next_occurrence for recurring tasks in phase-5/backend/src/api/tasks.py
+- [X] T177 [P] Add integration tests for Intermediate features with Phase V features in phase-5/backend/tests/integration/test_intermediate_features_phase5.py covering filtering, sorting, and search with recurring tasks and reminders
 
 ### Documentation
 
 - [X] T178 [P] Create deployment documentation in phase-5/docs/DEPLOYMENT.md with Minikube deployment steps, OKE deployment steps, AKS/GKE deployment steps
 - [X] T179 [P] Create operations runbook in phase-5/docs/RUNBOOK.md with common issues (consumer lag, reminder failures), troubleshooting steps, rollback procedures
-- [ ] T180 [P] Create monitoring guide in phase-5/docs/MONITORING.md with Grafana dashboard overview, Zipkin query examples, alert response procedures
-- [ ] T181 [P] Create architecture documentation in phase-5/docs/ARCHITECTURE.md with system context diagram, microservices architecture, event flows
+- [X] T180 [P] Create monitoring guide in phase-5/docs/MONITORING.md with Grafana dashboard overview, Zipkin query examples, alert response procedures
+- [X] T181 [P] Create architecture documentation in phase-5/docs/ARCHITECTURE.md with system context diagram, microservices architecture, event flows
 - [ ] T182 [P] Update main README.md in phase-5/README.md with Phase V feature overview, quick start guide, links to detailed docs
 
 ### End-to-End Testing
