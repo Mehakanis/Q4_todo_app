@@ -1,0 +1,65 @@
+{{- if .Values.dapr.components.pubsub.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.components.pubsub.name }}
+  namespace: default
+spec:
+  type: {{ .Values.dapr.components.pubsub.type }}
+  version: v1
+  metadata:
+    {{- range .Values.dapr.components.pubsub.metadata }}
+    - name: {{ .name }}
+      value: {{ .value | quote }}
+    {{- end }}
+{{- end }}
+
+{{- if .Values.dapr.components.statestore.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.components.statestore.name }}
+  namespace: default
+spec:
+  type: {{ .Values.dapr.components.statestore.type }}
+  version: v1
+  metadata:
+    {{- range .Values.dapr.components.statestore.metadata }}
+    - name: {{ .name }}
+      {{- if .value }}
+      value: {{ .value | quote }}
+      {{- else if .secretKeyRef }}
+      secretKeyRef:
+        name: {{ .secretKeyRef.name }}
+        key: {{ .secretKeyRef.key }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+
+{{- if .Values.dapr.components.secrets.enabled }}
+---
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: {{ .Values.dapr.components.secrets.name }}
+  namespace: default
+spec:
+  type: {{ .Values.dapr.components.secrets.type }}
+  version: v1
+{{- end }}
+
+---
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: dapr-config
+  namespace: default
+spec:
+  tracing:
+    samplingRate: "1.0"
+    zipkin:
+      endpointAddress: "http://zipkin:9411/api/v2/spans"
+  metric:
+    enabled: true

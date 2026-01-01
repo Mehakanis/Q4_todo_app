@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.recurringTaskService.name }}
+  labels:
+    app: {{ .Values.recurringTaskService.name }}
+    version: {{ .Chart.AppVersion }}
+spec:
+  replicas: {{ .Values.recurringTaskService.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.recurringTaskService.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.recurringTaskService.name }}
+        version: {{ .Chart.AppVersion }}
+      annotations:
+        dapr.io/enabled: "{{ .Values.recurringTaskService.dapr.enabled }}"
+        dapr.io/app-id: "{{ .Values.recurringTaskService.dapr.appId }}"
+        dapr.io/app-port: "{{ .Values.recurringTaskService.dapr.appPort }}"
+        dapr.io/config: "{{ .Values.recurringTaskService.dapr.config }}"
+        dapr.io/log-level: "{{ .Values.recurringTaskService.dapr.logLevel }}"
+        dapr.io/log-as-json: "true"
+    spec:
+      containers:
+        - name: {{ .Values.recurringTaskService.name }}
+          image: "{{ .Values.recurringTaskService.image.repository }}:{{ .Values.recurringTaskService.image.tag }}"
+          imagePullPolicy: {{ .Values.recurringTaskService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.recurringTaskService.port }}
+              protocol: TCP
+          env:
+            {{- range .Values.recurringTaskService.env }}
+            - name: {{ .name }}
+              {{- if .value }}
+              value: {{ .value | quote }}
+              {{- else if .valueFrom }}
+              valueFrom:
+                {{- toYaml .valueFrom | nindent 16 }}
+              {{- end }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.recurringTaskService.resources | nindent 12 }}
+          {{- if .Values.healthChecks.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: {{ .Values.healthChecks.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: {{ .Values.healthChecks.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.healthChecks.readinessProbe.periodSeconds }}
+          {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.recurringTaskService.name }}
+  labels:
+    app: {{ .Values.recurringTaskService.name }}
+spec:
+  type: {{ .Values.recurringTaskService.service.type }}
+  ports:
+    - port: {{ .Values.recurringTaskService.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Values.recurringTaskService.name }}

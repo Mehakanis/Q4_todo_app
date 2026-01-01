@@ -1,0 +1,129 @@
+# Redpanda Cloud Serverless Configuration - Cloud Deployment
+# Platform: Redpanda Cloud Serverless (managed Kafka-compatible service)
+# Purpose: Cloud deployment for Phase V production workloads
+# Topics: task-events, reminders, task-updates (12 partitions each)
+# Retention: 30 days (cloud production)
+
+## Redpanda Cloud Serverless Configuration
+# Note: This is NOT a Helm chart - Redpanda Cloud is a managed service
+# This file documents the Redpanda Cloud configuration for reference
+
+redpanda_cloud:
+  ## Connection configuration
+  connection:
+    broker_urls:
+      - "redpanda-cluster-xyz.cloud.redpanda.com:9092"  # Replace with actual cluster URL
+    auth:
+      mechanism: SASL_SSL
+      sasl_mechanism: SCRAM-SHA-256
+      username: "${REDPANDA_USERNAME}"  # Stored in OCI Vault or Kubernetes Secret
+      password: "${REDPANDA_PASSWORD}"  # Stored in OCI Vault or Kubernetes Secret
+
+  ## Topic configuration
+  topics:
+    - name: task-events
+      partitions: 12  # Partition by user_id (hash-based)
+      replication_factor: 3  # Redpanda Cloud default
+      retention_ms: 2592000000  # 30 days = 2,592,000,000 ms
+      retention_bytes: 10737418240  # 10GB per partition
+      compression_type: snappy
+      cleanup_policy: delete  # Delete old messages after retention period
+
+    - name: reminders
+      partitions: 12  # Partition by user_id (hash-based)
+      replication_factor: 3
+      retention_ms: 2592000000  # 30 days
+      retention_bytes: 5368709120  # 5GB per partition (lower volume than task-events)
+      compression_type: snappy
+      cleanup_policy: delete
+
+    - name: task-updates
+      partitions: 12  # Partition by user_id (hash-based)
+      replication_factor: 3
+      retention_ms: 2592000000  # 30 days
+      retention_bytes: 5368709120  # 5GB per partition
+      compression_type: snappy
+      cleanup_policy: delete
+
+  ## Producer configuration
+  producer:
+    acks: all  # Wait for all replicas to acknowledge (strongest durability)
+    enable_idempotence: true  # Prevent duplicate messages
+    max_in_flight_requests_per_connection: 5
+    compression_type: snappy
+    batch_size: 16384  # 16KB batches
+    linger_ms: 10  # Wait up to 10ms to batch messages
+
+  ## Consumer configuration
+  consumer:
+    group_id: phase5-consumer-group
+    auto_offset_reset: earliest  # Start from earliest message if no offset found
+    enable_auto_commit: false  # Manual commit for better control
+    max_poll_records: 500  # Fetch up to 500 records per poll
+    session_timeout_ms: 30000  # 30 seconds
+    heartbeat_interval_ms: 3000  # 3 seconds
+
+  ## Security configuration
+  security:
+    protocol: SASL_SSL
+    sasl_mechanism: SCRAM-SHA-256
+    ssl_ca_location: "/path/to/ca-cert.pem"  # Optional: Custom CA certificate
+
+## Dapr Pub/Sub component configuration for Redpanda Cloud
+# Update phase-5/dapr/components/pubsub-kafka.yaml with:
+#
+# metadata:
+#   - name: brokers
+#     value: "redpanda-cluster-xyz.cloud.redpanda.com:9092"
+#   - name: authType
+#     value: "sasl_ssl"
+#   - name: saslUsername
+#     secretKeyRef:
+#       name: kafka-credentials
+#       key: username
+#   - name: saslPassword
+#     secretKeyRef:
+#       name: kafka-credentials
+#       key: password
+#   - name: saslMechanism
+#     value: "SCRAM-SHA-256"
+
+## Kubernetes Secret for Redpanda credentials
+# Create secret with:
+# kubectl create secret generic kafka-credentials \
+#   --from-literal=username=<redpanda-username> \
+#   --from-literal=password=<redpanda-password> \
+#   --namespace=default
+
+## Topic creation via Redpanda Cloud Console
+# 1. Login to Redpanda Cloud Console: https://cloud.redpanda.com
+# 2. Navigate to Topics
+# 3. Create topics manually with configuration above
+# 4. OR use rpk CLI:
+#    rpk topic create task-events --brokers <broker-url> --partitions 12 --replicas 3
+#    rpk topic create reminders --brokers <broker-url> --partitions 12 --replicas 3
+#    rpk topic create task-updates --brokers <broker-url> --partitions 12 --replicas 3
+
+## Cost optimization notes:
+# - Redpanda Cloud Serverless charges per GB stored and transferred
+# - 30-day retention with 10GB/partition = ~120GB total storage
+# - Compression (snappy) reduces storage by ~30-40%
+# - Estimated cost: $10-20/month for low-traffic workloads
+# - Free tier: 10GB storage, 10MB/s throughput (sufficient for development)
+
+## Monitoring and alerting:
+# - Redpanda Cloud provides built-in metrics dashboard
+# - Configure alerts for:
+#   - High lag (> 1000 messages behind)
+#   - Failed deliveries (> 5% error rate)
+#   - Storage approaching retention limits
+# - Integrate with Prometheus/Grafana via Redpanda Cloud metrics API
+
+## Deployment checklist:
+# ✓ Create Redpanda Cloud account and cluster
+# ✓ Create topics with 12 partitions, 30-day retention
+# ✓ Generate SASL credentials
+# ✓ Store credentials in Kubernetes Secret or OCI Vault
+# ✓ Update Dapr pubsub-kafka.yaml with Redpanda Cloud broker URL
+# ✓ Test connection: kubectl exec -it <backend-pod> -- curl <dapr-url>/v1.0/publish/<pubsub>/<topic>
+# ✓ Monitor metrics in Redpanda Cloud Console
