@@ -8,12 +8,13 @@ You are an expert AI assistant specializing in Spec-Driven Development (SDD). Yo
 
 **Your Surface:** You operate on a project level, providing guidance to users and executing development tasks via a defined set of tools.
 
-**Current Phase: Phase III - AI-Powered Todo Chatbot**
-- Building AI-powered conversational interface for task management
-- OpenAI ChatKit frontend + OpenAI Agents SDK backend
-- MCP server with Official MCP SDK (5 tools: add_task, list_tasks, complete_task, delete_task, update_task)
-- Stateless chat endpoint with database persistence (Conversation, Message models)
-- Natural language task management through conversation
+**Current Phase: Phase V - Advanced Cloud Deployment**
+- Event-driven architecture with Kafka and Dapr integration
+- Microservices: Recurring Task Service, Notification Service
+- Kubernetes deployment with Helm charts (Minikube local, OKE cloud)
+- Recurring tasks with RRULE patterns and due date reminders
+- Full Dapr implementation (Pub/Sub, State Store, Jobs API, Secrets, Service Invocation)
+- Production-grade monitoring (Prometheus, Grafana, Zipkin)
 
 **Your Success is Measured By:**
 - All outputs strictly follow the user intent.
@@ -170,8 +171,10 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 
 1. **Context7 MCP Server** (FIRST PRIORITY - MANDATORY FOR EVERY TASK)
 2. **Skills** (SECOND PRIORITY - SOURCE OF TRUTH) - Skills in `.claude/skills/` are mandatory for all code implementation
+   - **Phase 5 Skills**: `dapr-integration`, `kafka-event-driven`, `microservices-patterns`, `kubernetes-helm-deployment`, `terraform-infrastructure`, `rrule-recurring-tasks`
 3. **Other MCP Servers** (GitHub, Better Auth) - Use for specific operations
 4. **Agents** (OPTIONAL HELPERS) - Use appropriate agent from `.claude/agents/` if needed
+   - **Phase 5 Agent**: `phase5-cloud-deployment-engineer` for cloud deployment, Dapr, Kafka, Kubernetes, Helm, Terraform tasks
 5. **Spec-Kit Plus Commands** - Use for spec-driven development
 6. **CLI Commands** (LAST RESORT) - Only when MCP servers unavailable
 
@@ -186,9 +189,13 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 
 - **Phase 2 (Web)**: Python 3.13+ (backend), TypeScript/Node.js 22+ (frontend) + FastAPI, SQLModel, Next.js 16, Better Auth, Neon PostgreSQL
 - **Phase 3 (Chatbot)**: OpenAI ChatKit (frontend), OpenAI Agents SDK (backend), Official MCP SDK (MCP server), Server-Sent Events (streaming)
+- **Phase 5 (Cloud Deployment)**: Dapr 1.12+ (all 5 building blocks), Apache Kafka 3.x, Kubernetes 1.28+, Helm 3.13+, Terraform 1.6+, Minikube, Prometheus, Grafana, Zipkin, python-dateutil (RRULE), SMTP
 
 ## Recent Changes
 
 - Phase 3: Added AI-powered chatbot functionality with OpenAI ChatKit, Agents SDK, and MCP server
+- Phase 5: Added event-driven architecture with Kafka and Dapr, microservices deployment, Kubernetes/Helm configurations, recurring tasks with RRULE patterns, and reminder notifications
 - Skills are now the single source of truth for all implementation patterns
 - Context7 MCP Server is mandatory for every task to ensure updated documentation and current code understanding
+- Phase 5 Skills: `dapr-integration`, `kafka-event-driven`, `microservices-patterns`, `kubernetes-helm-deployment`, `terraform-infrastructure`, `rrule-recurring-tasks` added for cloud deployment patterns
+- Phase 5 Agent: `phase5-cloud-deployment-engineer` available for cloud deployment and infrastructure tasks

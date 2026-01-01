@@ -1,0 +1,109 @@
+# Kafka Helm Chart Values - Minikube Local Deployment
+# Chart: bitnami/kafka
+# Purpose: Deploy Kafka cluster within Minikube for Phase V local development
+# Topics: task-events, reminders, task-updates (12 partitions each)
+# Retention: 7 days (local development)
+
+## Global configuration
+global:
+  storageClass: standard  # Minikube default storage class
+
+## Kafka cluster configuration
+kafka:
+  replicaCount: 1  # Single broker for Minikube (sufficient for development)
+
+  ## Listener configuration
+  listeners:
+    client:
+      protocol: PLAINTEXT  # No auth for local development
+      containerPort: 9092
+      name: CLIENT
+    controller:
+      protocol: PLAINTEXT
+      containerPort: 9093
+      name: CONTROLLER
+
+  ## Service configuration
+  service:
+    type: ClusterIP  # Internal cluster access only
+    ports:
+      client: 9092
+
+  ## Resource limits (minimal for Minikube)
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+  ## Persistence configuration
+  persistence:
+    enabled: true
+    storageClass: standard
+    size: 8Gi  # 8GB for local development (sufficient for 7-day retention)
+
+  ## Log retention configuration (7 days for local)
+  logRetentionHours: 168  # 7 days = 168 hours
+  logRetentionBytes: 1073741824  # 1GB per partition
+
+  ## Topic configuration (default for all topics)
+  defaultReplicationFactor: 1  # Single replica for Minikube
+  numPartitions: 12  # 12 partitions per topic (for user_id partitioning)
+  autoCreateTopicsEnable: false  # Topics created manually via script
+
+  ## Compression
+  compressionType: snappy  # Enable Snappy compression
+
+## ZooKeeper configuration (required for Kafka < 3.x)
+zookeeper:
+  enabled: true
+  replicaCount: 1  # Single ZooKeeper node for Minikube
+
+  ## Resource limits
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  ## Persistence
+  persistence:
+    enabled: true
+    storageClass: standard
+    size: 2Gi
+
+## Topic definitions (created manually via create-kafka-topics.sh)
+# Topics will be created with:
+# - task-events: 12 partitions, 7-day retention
+# - reminders: 12 partitions, 7-day retention
+# - task-updates: 12 partitions, 7-day retention
+
+## Metrics configuration (optional for development)
+metrics:
+  enabled: false  # Disable metrics for Minikube (resource-constrained)
+
+## External access configuration
+externalAccess:
+  enabled: false  # No external access for Minikube (cluster-internal only)
+
+## Deployment notes:
+# 1. Install Bitnami Kafka chart:
+#    helm repo add bitnami https://charts.bitnami.com/bitnami
+#    helm repo update
+#
+# 2. Install Kafka with this values file:
+#    helm install kafka bitnami/kafka -f values-minikube.yaml --namespace default
+#
+# 3. Create topics using script:
+#    ./scripts/create-kafka-topics.sh
+#
+# 4. Verify installation:
+#    kubectl get pods -l app.kubernetes.io/name=kafka
+#    kubectl logs -l app.kubernetes.io/name=kafka
+#
+# 5. Connect from Dapr:
+#    Broker URL: kafka.default.svc.cluster.local:9092

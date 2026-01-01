@@ -1,0 +1,29 @@
+apiVersion: v2
+name: todo-app
+description: Todo Chatbot Application - Phase V Advanced Cloud Deployment
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - todo
+  - chatbot
+  - kubernetes
+  - dapr
+  - kafka
+  - microservices
+
+maintainers:
+  - name: GIAIC Phase V Team
+    email: support@example.com
+
+home: https://github.com/yourusername/todo-giaic-five-phases
+sources:
+  - https://github.com/yourusername/todo-giaic-five-phases
+
+# Dependencies (optional - if using subchart patterns)
+# dependencies:
+#   - name: kafka
+#     version: "~26.0"
+#     repository: "https://charts.bitnami.com/bitnami"
+#     condition: kafka.enabled
