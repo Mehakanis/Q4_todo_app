@@ -261,7 +261,7 @@ def get_smtp_client() -> SMTPClient:
         SMTPClient instance
 
     Usage:
-        from phase_5.backend.src.integrations.smtp_client import get_smtp_client
+        from src.integrations.smtp_client import get_smtp_client
 
         smtp = get_smtp_client()
         await smtp.send_reminder_email(...)

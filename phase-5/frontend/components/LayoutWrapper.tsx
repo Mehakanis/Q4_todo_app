@@ -13,15 +13,35 @@ import { Sidebar } from "@/components/organisms/Sidebar";
 import { TopBar } from "@/components/organisms/TopBar";
 import { useLayoutState } from "@/hooks/useLayoutState";
 import { cn } from "@/lib/utils";
+import { locales } from "@/lib/i18n/config";
 
-// Pages that should NOT show the sidebar/topbar
+// Pages that should NOT show the sidebar/topbar (without locale prefix)
 const PUBLIC_PAGES = ["/", "/signin", "/signup"];
+
+/**
+ * Remove locale prefix from pathname
+ * e.g., /en/dashboard -> /dashboard, /en/ -> /
+ */
+function removeLocalePrefix(pathname: string): string {
+  const segments = pathname.split("/").filter(Boolean);
+  
+  // Check if first segment is a locale
+  if (segments.length > 0 && locales.includes(segments[0] as any)) {
+    // Remove locale and reconstruct path
+    const pathWithoutLocale = "/" + segments.slice(1).join("/");
+    return pathWithoutLocale === "/" ? "/" : pathWithoutLocale;
+  }
+  
+  return pathname;
+}
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { state, actions } = useLayoutState();
 
-  const isPublicPage = PUBLIC_PAGES.includes(pathname);
+  // Remove locale prefix for comparison
+  const normalizedPath = removeLocalePrefix(pathname);
+  const isPublicPage = PUBLIC_PAGES.includes(normalizedPath);
   const showSidebar = !isPublicPage;
 
   useEffect(() => {

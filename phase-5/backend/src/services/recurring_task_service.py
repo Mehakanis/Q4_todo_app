@@ -16,9 +16,9 @@ from typing import Optional
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 
-from phase_5.backend.src.integrations.dapr_client import get_dapr_client
-from phase_5.backend.src.integrations.rrule_parser import get_rrule_parser
-from phase_5.backend.src.events.schemas import TaskCompletedEvent, TaskCompletedEventPayload
+from src.integrations.dapr_client import get_dapr_client
+from src.integrations.rrule_parser import get_rrule_parser
+from src.events.schemas import TaskCompletedEvent, TaskCompletedEventPayload
 
 logger = logging.getLogger(__name__)
 

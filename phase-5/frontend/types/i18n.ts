@@ -1,5 +1,8 @@
 import { Locale } from '../lib/i18n/config';
 
+// Re-export Locale type for convenience
+export type { Locale };
+
 // Language preference stored in localStorage
 export interface LanguagePreference {
   locale: Locale;

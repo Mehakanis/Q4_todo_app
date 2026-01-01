@@ -28,10 +28,10 @@ from sqlmodel import Session, select
 import httpx
 
 # Phase 5 imports
-from phase_5.backend.src.integrations.dapr_client import get_dapr_client
-from phase_5.backend.src.events.schemas import ReminderScheduledEvent
-from phase_5.backend.src.events.dlq_handler import DLQHandler
-from phase_5.backend.src.integrations.smtp_client import SMTPClient, get_smtp_client
+from src.integrations.dapr_client import get_dapr_client
+from src.events.schemas import ReminderScheduledEvent
+from src.events.dlq_handler import DLQHandler
+from src.integrations.smtp_client import SMTPClient, get_smtp_client
 
 logger = logging.getLogger(__name__)
 

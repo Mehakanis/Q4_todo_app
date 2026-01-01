@@ -100,8 +100,21 @@ const DropdownMenuContent = React.forwardRef<
     setIsOpen?: (open: boolean) => void;
     align?: "start" | "center" | "end";
   }
->(({ className, children, isOpen, setIsOpen, align = "end", ...props }) => {
+>(({ className, children, isOpen, setIsOpen, align = "end", ...props }, ref) => {
   const contentRef = React.useRef<HTMLDivElement>(null);
+
+  // Merge forwarded ref with internal ref
+  const mergedRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      contentRef.current = node;
+      if (typeof ref === "function") {
+        ref(node);
+      } else if (ref) {
+        (ref as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }
+    },
+    [ref]
+  );
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -150,7 +163,7 @@ const DropdownMenuContent = React.forwardRef<
 
   return (
     <div
-      ref={contentRef}
+      ref={mergedRef}
       className={cn(
         "absolute z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-card p-1 shadow-lg mt-1",
         alignmentClasses[align],

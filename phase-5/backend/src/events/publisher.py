@@ -9,8 +9,8 @@ Based on: .claude/skills/kafka-event-driven
 
 import logging
 from typing import Optional
-from phase_5.backend.src.integrations.dapr_client import get_dapr_client
-from phase_5.backend.src.events.schemas import (
+from src.integrations.dapr_client import get_dapr_client
+from src.events.schemas import (
     TaskCompletedEvent,
     ReminderScheduledEvent,
     TaskUpdatedEvent

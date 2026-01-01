@@ -16,4 +16,5 @@ cachetools>=5.5.0
 psycopg2-binary>=2.9.11
 asyncpg>=0.31.0
 python-dotenv>=1.0.0
+python-dateutil>=2.9.0
 reportlab>=4.0.0

@@ -369,7 +369,10 @@ export function createRecurringTaskPayload(
   }
 
   if (options.recurringPattern) {
-    payload.recurring_pattern = formatPatternForAPI(options.recurringPattern);
+    const formattedPattern = formatPatternForAPI(options.recurringPattern);
+    if (formattedPattern !== null) {
+      payload.recurring_pattern = formattedPattern;
+    }
   }
 
   if (options.recurringEndDate) {

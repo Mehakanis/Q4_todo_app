@@ -65,7 +65,7 @@ function getLanguageCode(locale: Locale): string {
  * Create and configure a speech recognition instance
  */
 export class SpeechRecognitionWrapper {
-  private recognition: SpeechRecognition | null = null;
+  private recognition: any | null = null;
   private isRecognizing = false;
   private config: SpeechRecognitionConfig;
   private callbacks: SpeechRecognitionCallbacks;
@@ -95,7 +95,7 @@ export class SpeechRecognitionWrapper {
 
     if (!SpeechRecognition) {
       this.callbacks.onError?.({
-        code: 'not-allowed',
+        code: 'BROWSER_NOT_SUPPORTED',
         message: 'Speech recognition is not supported in this browser',
         timestamp: Date.now(),
       });
@@ -107,7 +107,7 @@ export class SpeechRecognitionWrapper {
       this.setupRecognition();
     } catch (error) {
       this.callbacks.onError?.({
-        code: 'not-allowed',
+        code: 'BROWSER_NOT_SUPPORTED',
         message: 'Failed to initialize speech recognition',
         timestamp: Date.now(),
       });
@@ -140,11 +140,11 @@ export class SpeechRecognitionWrapper {
       this.callbacks.onSpeechEnd?.();
     };
 
-    this.recognition.onresult = (event: SpeechRecognitionEvent) => {
+    this.recognition.onresult = (event: any) => {
       this.handleResult(event);
     };
 
-    this.recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    this.recognition.onerror = (event: any) => {
       this.handleError(event);
     };
 
@@ -161,7 +161,7 @@ export class SpeechRecognitionWrapper {
   /**
    * Handle speech recognition results
    */
-  private handleResult(event: SpeechRecognitionEvent): void {
+  private handleResult(event: any): void {
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
       const transcript = result[0].transcript;
@@ -178,7 +178,7 @@ export class SpeechRecognitionWrapper {
   /**
    * Handle speech recognition errors
    */
-  private handleError(event: SpeechRecognitionErrorEvent): void {
+  private handleError(event: any): void {
     const voiceError: VoiceError = {
       code: event.error as VoiceError['code'],
       message: this.getErrorMessage(event.error),
@@ -213,7 +213,7 @@ export class SpeechRecognitionWrapper {
   start(): void {
     if (!this.recognition) {
       this.callbacks.onError?.({
-        code: 'not-allowed',
+        code: 'BROWSER_NOT_SUPPORTED',
         message: 'Speech recognition is not initialized',
         timestamp: Date.now(),
       });
@@ -229,7 +229,7 @@ export class SpeechRecognitionWrapper {
       this.recognition.start();
     } catch (error) {
       this.callbacks.onError?.({
-        code: 'not-allowed',
+        code: 'BROWSER_NOT_SUPPORTED',
         message: 'Failed to start speech recognition',
         timestamp: Date.now(),
       });

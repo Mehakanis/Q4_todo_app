@@ -351,7 +351,7 @@ def get_dapr_client() -> DaprClient:
         DaprClient instance
 
     Usage:
-        from phase_5.backend.src.integrations.dapr_client import get_dapr_client
+        from src.integrations.dapr_client import get_dapr_client
 
         dapr = get_dapr_client()
         await dapr.publish_event("task-events", {...})

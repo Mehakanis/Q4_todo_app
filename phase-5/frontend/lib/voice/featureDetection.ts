@@ -99,9 +99,7 @@ export function getUnsupportedFeatureMessage(
 /**
  * Get Speech Recognition constructor (handles vendor prefixes)
  */
-export function getSpeechRecognitionConstructor():
-  | typeof SpeechRecognition
-  | null {
+export function getSpeechRecognitionConstructor(): any | null {
   if (typeof window === 'undefined') return null;
 
   return (

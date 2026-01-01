@@ -25,7 +25,7 @@ from typing import Dict, Any
 from datetime import datetime, timedelta
 from enum import Enum
 
-from phase_5.backend.src.integrations.dapr_client import get_dapr_client
+from src.integrations.dapr_client import get_dapr_client
 
 logger = logging.getLogger(__name__)
 

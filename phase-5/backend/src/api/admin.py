@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 
 # Phase 5 imports
-from phase_5.backend.src.integrations.dapr_client import get_dapr_client
+from src.integrations.dapr_client import get_dapr_client
 
 logger = logging.getLogger(__name__)
 

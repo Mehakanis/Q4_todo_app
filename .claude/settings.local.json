@@ -47,7 +47,8 @@
       "Bash(python:*)",
       "Bash(python -m pytest:*)",
       "Skill(sp.specify)",
-      "Skill(sp.plan)"
+      "Skill(sp.plan)",
+      "Bash(pnpm run build:*)"
     ],
     "deny": [],
     "ask": []

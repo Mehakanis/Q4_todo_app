@@ -80,7 +80,7 @@ export function useVoiceCommands(
           setState((prev) => ({
             ...prev,
             error: {
-              code: 'no-speech',
+              code: 'UNKNOWN_INTENT',
               message: 'Could not understand command. Please try again.',
               timestamp: Date.now(),
             },
@@ -90,7 +90,7 @@ export function useVoiceCommands(
         setState((prev) => ({
           ...prev,
           error: {
-            code: 'network',
+            code: 'NETWORK_ERROR',
             message:
               error instanceof Error
                 ? error.message
@@ -168,7 +168,7 @@ export function useVoiceCommands(
           setState((prev) => ({
             ...prev,
             error: {
-              code: 'no-speech',
+              code: 'NO_SPEECH_DETECTED',
               message: 'No speech detected. Please try again.',
               timestamp: Date.now(),
             },
@@ -192,7 +192,7 @@ export function useVoiceCommands(
       setState((prev) => ({
         ...prev,
         error: {
-          code: 'not-allowed',
+          code: 'BROWSER_NOT_SUPPORTED',
           message: 'Speech recognition is not supported in this browser',
           timestamp: Date.now(),
         },
@@ -207,7 +207,7 @@ export function useVoiceCommands(
       setState((prev) => ({
         ...prev,
         error: {
-          code: 'not-allowed',
+          code: 'BROWSER_NOT_SUPPORTED',
           message: 'Microphone access denied. Please enable in browser settings.',
           timestamp: Date.now(),
         },
@@ -221,7 +221,7 @@ export function useVoiceCommands(
         setState((prev) => ({
           ...prev,
           error: {
-            code: 'not-allowed',
+            code: 'BROWSER_NOT_SUPPORTED',
             message: 'Microphone access denied',
             timestamp: Date.now(),
           },

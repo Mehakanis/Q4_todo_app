@@ -32,9 +32,14 @@ import { TaskCard } from "@/components/molecules/TaskCard";
 import { usePolling } from "@/hooks/usePolling";
 import TaskForm from "@/components/TaskForm";
 import { GlassCard } from "@/components/atoms/GlassCard";
-import { X, LayoutGrid, List, Columns3, Download, Upload, Trash2, ChevronRight, ChevronDown, FileText, FileJson, FileSpreadsheet } from "lucide-react";
+import { X, LayoutGrid, List, Columns3, Download, Upload, Trash2, ChevronRight, ChevronDown, FileText, FileJson, FileSpreadsheet, StopCircle, Volume2 } from "lucide-react";
 import { TaskViewMode, ExportFormat } from "@/types";
 import { cn } from "@/lib/utils";
+import { VoiceCommandButton } from "@/components/VoiceCommandButton";
+import { VoiceCommandHelp } from "@/components/VoiceCommandHelp";
+import { parseVoiceCommand, getCommandDescription } from "@/lib/voice/commandParser";
+import type { VoiceCommand } from "@/types/voice";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
 
 function TasksContent() {
   const router = useRouter();
@@ -56,6 +61,10 @@ function TasksContent() {
   const [selectedPriorities, setSelectedPriorities] = useState<TaskPriority[]>([]);
   const [viewMode, setViewMode] = useState<TaskViewMode>("kanban");
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
+  // Text-to-speech hook for READ_TASKS command
+  const { speak, speakSequence, stop: stopSpeaking, state: ttsState } = useTextToSpeech();
 
   useEffect(() => {
     async function loadUser() {
@@ -234,6 +243,323 @@ function TasksContent() {
     router.push(`/dashboard`);
   };
 
+  /**
+   * Handle voice commands
+   * Processes parsed voice commands and executes corresponding actions
+   */
+  const handleVoiceCommand = useCallback(
+    async (command: VoiceCommand) => {
+      if (!user) return;
+
+      const commandDesc = getCommandDescription(command, command.locale);
+      console.log('Voice command received:', commandDesc, command);
+
+      try {
+        switch (command.intent) {
+          case 'CREATE_TASK': {
+            const title = command.parameters.title;
+            if (!title) {
+              throw new Error('Task title is required');
+            }
+
+            // Create new task via API
+            const response = await api.createTask(user.id, {
+              title,
+              description: '',
+              priority: 'medium',
+              due_date: undefined,
+            });
+
+            if (response.success) {
+              await loadTasks(user.id, true);
+              toast({
+                type: 'success',
+                description: `✅ ${t('messages.created')}: "${title}"`,
+                duration: 3000,
+              });
+            } else {
+              throw new Error(response.message || 'Failed to create task');
+            }
+            break;
+          }
+
+          case 'COMPLETE_TASK': {
+            const taskNumber = command.parameters.taskNumber;
+
+            // Validate task number
+            if (!taskNumber || taskNumber < 1 || taskNumber > tasks.length) {
+              throw new Error(
+                command.locale === 'ur'
+                  ? `غلط کام نمبر: ${taskNumber}. کام نمبر 1 سے ${tasks.length} کے درمیان ہونا چاہیے۔`
+                  : `Invalid task number: ${taskNumber}. Please use a number between 1 and ${tasks.length}.`
+              );
+            }
+
+            // Get task by position (taskNumber is 1-indexed)
+            const taskToComplete = tasks[taskNumber - 1];
+            if (!taskToComplete) {
+              throw new Error(command.locale === 'ur' ? 'کام نہیں ملا' : 'Task not found');
+            }
+
+            // Complete the task using existing handler
+            await handleTaskUpdate(taskToComplete.id, { completed: true });
+            toast({
+              type: 'success',
+              description: `✅ ${command.locale === 'ur' ? 'کام مکمل' : 'Task completed'}: "${taskToComplete.title}"`,
+              duration: 3000,
+            });
+            break;
+          }
+
+          case 'DELETE_TASK': {
+            const taskNumber = command.parameters.taskNumber;
+
+            // Validate task number
+            if (!taskNumber || taskNumber < 1 || taskNumber > tasks.length) {
+              throw new Error(
+                command.locale === 'ur'
+                  ? `غلط کام نمبر: ${taskNumber}. کام نمبر 1 سے ${tasks.length} کے درمیان ہونا چاہیے۔`
+                  : `Invalid task number: ${taskNumber}. Please use a number between 1 and ${tasks.length}.`
+              );
+            }
+
+            // Get task by position (taskNumber is 1-indexed)
+            const taskToDelete = tasks[taskNumber - 1];
+            if (!taskToDelete) {
+              throw new Error(command.locale === 'ur' ? 'کام نہیں ملا' : 'Task not found');
+            }
+
+            // Show confirmation dialog before deleting
+            const confirmed = window.confirm(
+              command.locale === 'ur'
+                ? `کیا آپ واقعی اس کام کو حذف کرنا چاہتے ہیں؟\n\n"${taskToDelete.title}"`
+                : `Are you sure you want to delete this task?\n\n"${taskToDelete.title}"`
+            );
+
+            if (!confirmed) {
+              toast({
+                type: 'info',
+                description: command.locale === 'ur' ? 'حذف منسوخ کر دیا گیا' : 'Delete cancelled',
+                duration: 2000,
+              });
+              return;
+            }
+
+            // Delete the task using existing handler
+            await handleTaskDelete(taskToDelete.id);
+            toast({
+              type: 'success',
+              description: `🗑️ ${command.locale === 'ur' ? 'کام حذف کر دیا گیا' : 'Task deleted'}: "${taskToDelete.title}"`,
+              duration: 3000,
+            });
+            break;
+          }
+
+          case 'UPDATE_TASK': {
+            const taskNumber = command.parameters.taskNumber;
+            const newTitle = command.parameters.newTitle;
+
+            // Validate task number
+            if (!taskNumber || taskNumber < 1 || taskNumber > tasks.length) {
+              throw new Error(
+                command.locale === 'ur'
+                  ? `غلط کام نمبر: ${taskNumber}. کام نمبر 1 سے ${tasks.length} کے درمیان ہونا چاہیے۔`
+                  : `Invalid task number: ${taskNumber}. Please use a number between 1 and ${tasks.length}.`
+              );
+            }
+
+            // Validate new title
+            if (!newTitle || newTitle.trim().length === 0) {
+              throw new Error(
+                command.locale === 'ur'
+                  ? 'نیا عنوان خالی نہیں ہو سکتا'
+                  : 'New title cannot be empty'
+              );
+            }
+
+            // Get task by position (taskNumber is 1-indexed)
+            const taskToUpdate = tasks[taskNumber - 1];
+            if (!taskToUpdate) {
+              throw new Error(command.locale === 'ur' ? 'کام نہیں ملا' : 'Task not found');
+            }
+
+            // Update the task using existing handler
+            await handleTaskUpdate(taskToUpdate.id, { title: newTitle.trim() });
+            toast({
+              type: 'success',
+              description: `✏️ ${command.locale === 'ur' ? 'کام تبدیل کر دیا گیا' : 'Task updated'}: "${newTitle}"`,
+              duration: 3000,
+            });
+            break;
+          }
+
+          case 'FILTER_TASKS': {
+            const filterType = command.parameters.filter;
+
+            // Map filter type to TaskFilter type
+            let newFilter: TaskFilter = 'all';
+
+            if (filterType === 'high' || filterType === 'medium' || filterType === 'low') {
+              // Priority filter - we'll handle this differently
+              const priority = filterType as TaskPriority;
+              setSelectedPriorities([priority]);
+              setFilter('all'); // Show all statuses but filter by priority
+
+              toast({
+                type: 'success',
+                description: `🔍 ${command.locale === 'ur' ? 'فلٹر لگایا گیا' : 'Filter applied'}: ${
+                  command.locale === 'ur'
+                    ? filterType === 'high' ? 'اہم کام' : filterType === 'medium' ? 'درمیانہ کام' : 'کم کام'
+                    : `${filterType} priority tasks`
+                }`,
+                duration: 3000,
+              });
+            } else if (filterType === 'completed') {
+              newFilter = 'completed';
+              setFilter(newFilter);
+              setSelectedPriorities([]);
+
+              toast({
+                type: 'success',
+                description: `🔍 ${command.locale === 'ur' ? 'فلٹر لگایا گیا: مکمل کام' : 'Filter applied: Completed tasks'}`,
+                duration: 3000,
+              });
+            } else if (filterType === 'incomplete') {
+              newFilter = 'pending'; // Map 'incomplete' to 'pending'
+              setFilter(newFilter);
+              setSelectedPriorities([]);
+
+              toast({
+                type: 'success',
+                description: `🔍 ${command.locale === 'ur' ? 'فلٹر لگایا گیا: نامکمل کام' : 'Filter applied: Pending tasks'}`,
+                duration: 3000,
+              });
+            } else {
+              // Default to 'all'
+              newFilter = 'all';
+              setFilter(newFilter);
+              setSelectedPriorities([]);
+
+              toast({
+                type: 'success',
+                description: `🔍 ${command.locale === 'ur' ? 'فلٹر لگایا گیا: تمام کام' : 'Filter applied: All tasks'}`,
+                duration: 3000,
+              });
+            }
+            break;
+          }
+
+          case 'READ_TASKS': {
+            // T066: Implement READ_TASKS command execution
+            // T072: Handle empty task list
+            // T073: Support filtered reading
+
+            // Check if there are any tasks to read
+            if (tasks.length === 0) {
+              const emptyMessage =
+                command.locale === 'ur'
+                  ? 'آپ کے پاس کوئی کام نہیں ہے۔'
+                  : 'You have no tasks.';
+
+              await speak(emptyMessage);
+              toast({
+                type: 'info',
+                description: `🔊 ${emptyMessage}`,
+                duration: 3000,
+              });
+              break;
+            }
+
+            // Build introduction based on filter state
+            let intro = '';
+            if (filter !== 'all' || selectedPriorities.length > 0) {
+              // Filtered reading (T073)
+              const filterDesc =
+                filter === 'completed'
+                  ? command.locale === 'ur'
+                    ? 'مکمل شدہ کام'
+                    : 'completed tasks'
+                  : filter === 'pending'
+                  ? command.locale === 'ur'
+                    ? 'زیر التواء کام'
+                    : 'pending tasks'
+                  : command.locale === 'ur'
+                  ? 'تمام کام'
+                  : 'all tasks';
+
+              intro =
+                command.locale === 'ur'
+                  ? `آپ کے ${tasks.length} ${filterDesc} ہیں:`
+                  : `You have ${tasks.length} ${filterDesc}:`;
+            } else {
+              // All tasks (no filter)
+              intro =
+                command.locale === 'ur'
+                  ? `آپ کے ${tasks.length} کام ہیں:`
+                  : `You have ${tasks.length} tasks:`;
+            }
+
+            // Prepare task titles for reading
+            const taskTitles = tasks.map((task, index) => {
+              const number = index + 1;
+              const status = task.completed
+                ? command.locale === 'ur'
+                  ? 'مکمل'
+                  : 'completed'
+                : '';
+              return status
+                ? `${number}. ${task.title} (${status})`
+                : `${number}. ${task.title}`;
+            });
+
+            // Speak introduction followed by task titles
+            await speakSequence([intro, ...taskTitles]);
+
+            toast({
+              type: 'success',
+              description: `🔊 ${command.locale === 'ur' ? 'کام پڑھ رہا ہے' : 'Reading tasks'}`,
+              duration: 3000,
+            });
+            break;
+          }
+
+          case 'SHOW_HELP': {
+            // T071: Implement SHOW_HELP command
+            // Open the help modal
+            setShowHelpModal(true);
+
+            toast({
+              type: 'success',
+              description: `❓ ${command.locale === 'ur' ? 'مدد کھولنا' : 'Opening help'}`,
+              duration: 2000,
+            });
+            break;
+          }
+
+          case 'UNKNOWN':
+            toast({
+              type: 'error',
+              description: t('voice_command_not_recognized'),
+              duration: 3000,
+            });
+            break;
+
+          default:
+            console.warn('Unhandled voice command intent:', command.intent);
+        }
+      } catch (error) {
+        console.error('Voice command execution failed:', error);
+        toast({
+          type: 'error',
+          title: 'Voice command failed',
+          description: error instanceof Error ? error.message : 'An error occurred',
+          duration: 5000,
+        });
+      }
+    },
+    [user, tasks, loadTasks, handleTaskUpdate, handleTaskDelete, setFilter, setSelectedPriorities, toast, t, speak, speakSequence, setShowHelpModal, filter]
+  );
+
   const handleAddTask = (status: 'todo' | 'in-progress' | 'done') => {
     // Open modal to create task with the selected status
     setInitialStatus(status);
@@ -289,8 +615,38 @@ function TasksContent() {
             title={t('page_title')}
             subtitle={t('page_subtitle')}
           />
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-2">
+          {/* Voice Command Button & View Mode Toggle */}
+          <div className="flex items-center gap-3">
+            {/* Voice Command Button */}
+            <VoiceCommandButton
+              onCommand={handleVoiceCommand}
+              showTranscript={true}
+            />
+
+            {/* T068: TTS Stop Button - Only show when speaking */}
+            {ttsState.isSpeaking && (
+              <button
+                onClick={stopSpeaking}
+                className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors shadow-lg"
+                title={t('stop_speaking') || 'Stop speaking'}
+                aria-label="Stop text-to-speech"
+              >
+                <StopCircle className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* T069: Speaking State Indicator */}
+            {ttsState.isSpeaking && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-400">
+                <Volume2 className="w-4 h-4 animate-pulse" />
+                <span className="text-sm font-medium">
+                  {t('speaking') || 'Speaking...'}
+                </span>
+              </div>
+            )}
+
+            {/* View Mode Toggle Buttons */}
+            <div className="flex items-center gap-2 border-s border-gray-300 dark:border-gray-700 ps-3">
             <button
               onClick={() => setViewMode("list")}
               className={cn(
@@ -327,6 +683,7 @@ function TasksContent() {
             >
               <Columns3 className="w-4 h-4" />
             </button>
+            </div>
           </div>
         </div>
       </div>
@@ -638,6 +995,14 @@ function TasksContent() {
             </div>
           </GlassCard>
         </div>
+      )}
+
+      {/* Voice Command Help Modal */}
+      {showHelpModal && (
+        <VoiceCommandHelp
+          isOpen={showHelpModal}
+          onClose={() => setShowHelpModal(false)}
+        />
       )}
     </div>
   );

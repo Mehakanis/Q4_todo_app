@@ -194,7 +194,7 @@ def get_rrule_parser() -> RRuleParser:
         RRuleParser instance
 
     Usage:
-        from phase_5.backend.src.integrations.rrule_parser import get_rrule_parser
+        from src.integrations.rrule_parser import get_rrule_parser
 
         parser = get_rrule_parser()
         next_occ = parser.calculate_next("DAILY", datetime.utcnow())
