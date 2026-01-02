@@ -1,9 +1,9 @@
 'use client';
 
-import { TaskFilter, TaskPriority } from '@/types';
+import { TaskFilter, TaskPriority, SortField, SortDirection } from '@/types';
 import { GlassCard } from '@/components/atoms/GlassCard';
 import { Button } from '@/components/atoms/Button';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -16,6 +16,9 @@ export interface TaskFiltersProps {
   searchQuery?: string;
   onPriorityFilter?: (priorities: TaskPriority[]) => void;
   selectedPriorities?: TaskPriority[];
+  onSortChange?: (field: SortField, direction: SortDirection) => void;
+  currentSortField?: SortField;
+  currentSortDirection?: SortDirection;
 }
 
 export function TaskFilters({
@@ -26,11 +29,17 @@ export function TaskFilters({
   searchQuery = '',
   onPriorityFilter,
   selectedPriorities = [],
+  onSortChange,
+  currentSortField = 'created',
+  currentSortDirection = 'desc',
 }: TaskFiltersProps) {
   const [searchValue, setSearchValue] = useState(searchQuery);
   const [showPriorityFilter, setShowPriorityFilter] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
   const priorityButtonRef = useRef<HTMLDivElement>(null);
+  const sortButtonRef = useRef<HTMLDivElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const [sortDropdownPosition, setSortDropdownPosition] = useState({ top: 0, left: 0 });
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +77,30 @@ export function TaskFilters({
       };
     }
   }, [showPriorityFilter]);
+
+  // Calculate sort dropdown position when it opens
+  useEffect(() => {
+    if (showSortDropdown && sortButtonRef.current) {
+      const updatePosition = () => {
+        if (sortButtonRef.current) {
+          const rect = sortButtonRef.current.getBoundingClientRect();
+          setSortDropdownPosition({
+            top: rect.bottom + 8,
+            left: rect.left,
+          });
+        }
+      };
+      
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [showSortDropdown]);
 
   const filterButtons: { label: string; value: TaskFilter }[] = [
     { label: 'All', value: 'all' },
@@ -123,6 +156,7 @@ export function TaskFilters({
               onClick={(e) => {
                 e.stopPropagation();
                 setShowPriorityFilter(!showPriorityFilter);
+                setShowSortDropdown(false);
               }}
             >
               <Filter className="w-4 h-4 me-1" />
@@ -160,6 +194,74 @@ export function TaskFilters({
                     <span className="text-sm capitalize">{priority}</span>
                   </label>
                 ))}
+                </div>
+              </>,
+              document.body
+            )}
+          </div>
+        )}
+
+        {/* Sort Button */}
+        {onSortChange && (
+          <div className="relative" ref={sortButtonRef}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowSortDropdown(!showSortDropdown);
+                setShowPriorityFilter(false);
+              }}
+            >
+              <ArrowUpDown className="w-4 h-4 me-1" />
+              Sort
+              {currentSortField !== 'created' || currentSortDirection !== 'desc' ? (
+                <span className="ml-1 text-xs opacity-70">
+                  ({currentSortField} {currentSortDirection === 'asc' ? '↑' : '↓'})
+                </span>
+              ) : null}
+            </Button>
+            {showSortDropdown && typeof window !== 'undefined' && createPortal(
+              <>
+                <div
+                  className="fixed inset-0 z-[9998]"
+                  onClick={() => setShowSortDropdown(false)}
+                />
+                <div 
+                  className="fixed z-[10000] glass-card-elevated p-2 min-w-[180px] rounded-lg shadow-2xl border border-white/20 dark:border-gray-700/50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl"
+                  style={{ 
+                    top: `${sortDropdownPosition.top}px`, 
+                    left: `${sortDropdownPosition.left}px`,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2 py-1 mb-1">
+                    Sort by:
+                  </div>
+                  {(['created', 'title', 'updated', 'priority', 'due_date'] as SortField[]).map((field) => (
+                    <div key={field} className="space-y-1">
+                      <button
+                        onClick={() => {
+                          const newDirection = currentSortField === field && currentSortDirection === 'asc' ? 'desc' : 'asc';
+                          onSortChange(field, newDirection);
+                          setShowSortDropdown(false);
+                        }}
+                        className={cn(
+                          "w-full flex items-center justify-between px-3 py-2 rounded hover:bg-white/10 dark:hover:bg-gray-800/50 text-gray-900 dark:text-gray-100 text-sm",
+                          currentSortField === field && "bg-indigo-500/20 dark:bg-indigo-500/20"
+                        )}
+                      >
+                        <span className="capitalize">{field === 'due_date' ? 'Due Date' : field}</span>
+                        {currentSortField === field && (
+                          currentSortDirection === 'asc' ? (
+                            <ArrowUp className="w-3 h-3" />
+                          ) : (
+                            <ArrowDown className="w-3 h-3" />
+                          )
+                        )}
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </>,
               document.body
