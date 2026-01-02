@@ -32,7 +32,7 @@ import { TaskCard } from "@/components/molecules/TaskCard";
 import { usePolling } from "@/hooks/usePolling";
 import TaskForm from "@/components/TaskForm";
 import { GlassCard } from "@/components/atoms/GlassCard";
-import { X, LayoutGrid, List, Columns3, Download, Upload, Trash2, ChevronRight, ChevronDown, FileText, FileJson, FileSpreadsheet, StopCircle, Volume2 } from "lucide-react";
+import { X, LayoutGrid, List, Columns3, Download, Upload, Trash2, ChevronRight, ChevronDown, FileText, FileJson, FileSpreadsheet, StopCircle, Volume2, Plus } from "lucide-react";
 import { TaskViewMode, ExportFormat } from "@/types";
 import { cn } from "@/lib/utils";
 import { VoiceCommandButton } from "@/components/VoiceCommandButton";
@@ -50,7 +50,7 @@ function TasksContent() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingState, setLoadingState] = useState<LoadingState>("loading");
   const [filter, setFilter] = useState<TaskFilter>("all");
-  const [sortConfig] = useState<SortConfig>({
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: "created",
     direction: "desc",
   });
@@ -630,8 +630,26 @@ function TasksContent() {
             title={t('page_title')}
             subtitle={t('page_subtitle')}
           />
-          {/* Voice Command Button & View Mode Toggle */}
+          {/* Create Task Button, Voice Command Button & View Mode Toggle */}
           <div className="flex items-center gap-3">
+            {/* Create Task Button */}
+            <button
+              onClick={() => {
+                setInitialStatus('todo');
+                setShowCreateModal(true);
+              }}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg",
+                "bg-indigo-600 hover:bg-indigo-700 text-white",
+                "transition-colors shadow-md hover:shadow-lg",
+                "font-medium text-sm"
+              )}
+              aria-label={t('create_new_task')}
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('create_new_task')}</span>
+            </button>
+
             {/* Voice Command Button */}
             <VoiceCommandButton
               onCommand={async (command) => {
@@ -724,6 +742,11 @@ function TasksContent() {
               searchQuery={searchQuery}
               onPriorityFilter={setSelectedPriorities}
               selectedPriorities={selectedPriorities}
+              onSortChange={(field, direction) => {
+                setSortConfig({ key: field, direction });
+              }}
+              currentSortField={sortConfig.key}
+              currentSortDirection={sortConfig.direction}
             />
           </div>
 
