@@ -360,7 +360,7 @@ function DashboardContent() {
               className="relative overflow-hidden rounded-xl border border-border bg-card shadow-lg shadow-black/5 backdrop-blur-sm"
             >
               {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
+              <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
               <div className="relative p-6 sm:p-8">
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
@@ -431,7 +431,7 @@ function DashboardContent() {
               transition={{ delay: 0.2 }}
               className="relative overflow-hidden rounded-xl border border-border bg-card shadow-lg shadow-black/5 backdrop-blur-sm"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
+              <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
               <div className="relative p-6 sm:p-8">
                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
@@ -537,7 +537,7 @@ function DashboardContent() {
               transition={{ delay: 0.2 }}
               className="relative overflow-hidden rounded-xl border border-border bg-card shadow-lg shadow-black/5 backdrop-blur-sm"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
+              <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
               <div className="relative p-6">
                 <h2 className="mb-6 text-xl font-bold tracking-tight text-foreground">
                   Statistics
@@ -623,7 +623,7 @@ function DashboardContent() {
               transition={{ delay: 0.3 }}
               className="relative overflow-hidden rounded-xl border border-border bg-card shadow-lg shadow-black/5 backdrop-blur-sm"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
+              <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
               <div className="relative p-6">
                 <h2 className="mb-6 text-xl font-bold tracking-tight text-foreground">
                   Quick Actions
@@ -670,7 +670,7 @@ function DashboardContent() {
               transition={{ delay: 0.4 }}
               className="relative overflow-hidden rounded-xl border border-border bg-card shadow-lg shadow-black/5 backdrop-blur-sm"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
+              <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-primary/5 opacity-50" />
               <div className="relative p-6">
                 <h2 className="mb-6 text-xl font-bold tracking-tight text-foreground">
                   View Options

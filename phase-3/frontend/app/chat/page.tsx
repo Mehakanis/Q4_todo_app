@@ -83,7 +83,7 @@ export default function ChatPage() {
           <div
             className={`${
               isMobileSidebarOpen ? "block" : "hidden"
-            } md:block absolute md:relative top-0 left-0 right-0 md:w-64 z-40 md:z-auto bg-card p-4 md:p-0 md:flex md:flex-col`}
+            } absolute md:relative top-0 left-0 right-0 md:w-64 z-40 md:z-auto bg-card p-4 md:p-0 md:flex md:flex-col`}
           >
             {user && jwtToken && (
               <ConversationHistory

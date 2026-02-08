@@ -422,10 +422,10 @@ function TasksContent() {
               {showExportDropdown && (
                 <>
                   <div
-                    className="fixed inset-0 z-[100]"
+                    className="fixed inset-0 z-100"
                     onClick={() => setShowExportDropdown(false)}
                   />
-                  <div className="absolute top-full left-0 right-0 mt-2 z-[101] rounded-lg overflow-hidden shadow-2xl backdrop-blur-xl border border-white/20 dark:border-gray-700/50 bg-white/20 dark:bg-gray-900/95 space-y-1.5 p-1.5">
+                  <div className="absolute top-full left-0 right-0 mt-2 z-101 rounded-lg overflow-hidden shadow-2xl backdrop-blur-xl border border-white/20 dark:border-gray-700/50 bg-white/20 dark:bg-gray-900/95 space-y-1.5 p-1.5">
                     {(["json", "csv", "pdf"] as ExportFormat[]).map((format) => {
                       const formatConfig = {
                         json: { 
