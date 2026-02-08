@@ -26,56 +26,56 @@ const mainFeatures = [
     title: "AI Chat Assistant",
     description:
       "Chat with your AI assistant to manage tasks naturally. Just say 'Add buy groceries' or 'Show my tasks' and the AI handles it instantly. Real-time responses with conversation history saved automatically.",
-    gradient: "from-indigo-500 to-purple-500",
+    gradient: "from-blue-600 to-blue-400",
   },
   {
     icon: Brain,
     title: "Smart Task Operations",
     description:
       "The AI understands your requests and can create, list, complete, update, and delete tasks through simple conversation. No need to learn complex commands - just talk naturally.",
-    gradient: "from-purple-500 to-pink-500",
+    gradient: "from-blue-500 to-cyan-500",
   },
   {
     icon: Lock,
     title: "Secure Authentication",
     description:
       "Enterprise-grade security with JWT tokens and Better Auth integration. Your data is encrypted and protected at every step.",
-    gradient: "from-blue-500 to-cyan-500",
+    gradient: "from-cyan-600 to-blue-500",
   },
   {
     icon: ListTodo,
     title: "Advanced Task Management",
     description:
       "Create, edit, organize, and prioritize tasks with ease. Support for due dates, priorities, tags, and detailed descriptions. Kanban board, list, and grid views.",
-    gradient: "from-green-500 to-emerald-500",
+    gradient: "from-blue-700 to-blue-500",
   },
   {
     icon: WifiOff,
     title: "Offline-First PWA",
     description:
       "Work seamlessly without internet. All changes sync automatically when you reconnect. Install as an app on any device.",
-    gradient: "from-teal-500 to-cyan-500",
+    gradient: "from-blue-400 to-cyan-400",
   },
   {
     icon: Search,
     title: "Powerful Search & Filter",
     description:
       "Find tasks instantly with real-time search. Filter by status, priority, tags, or due dates. Sort by creation date or custom order.",
-    gradient: "from-orange-500 to-red-500",
+    gradient: "from-blue-600 to-blue-500",
   },
   {
     icon: Download,
     title: "Export & Import",
     description:
       "Export your tasks to CSV, JSON, or PDF. Import tasks from other tools. Full data portability and backup options.",
-    gradient: "from-indigo-500 to-blue-500",
+    gradient: "from-blue-500 to-blue-400",
   },
   {
     icon: Keyboard,
     title: "Keyboard Shortcuts",
     description:
       "Navigate and manage tasks faster with intuitive keyboard shortcuts. Power user features for maximum productivity.",
-    gradient: "from-yellow-500 to-orange-500",
+    gradient: "from-cyan-600 to-blue-600",
   },
 ];
 

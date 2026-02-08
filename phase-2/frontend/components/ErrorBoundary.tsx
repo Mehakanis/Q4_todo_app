@@ -67,8 +67,8 @@ export default class ErrorBoundary extends Component<Props, State> {
 
       // Default error UI
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-          <div className="max-w-md w-full bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8">
+        <div className="min-h-screen flex items-center justify-center bg-foreground/5 dark:bg-background px-4">
+          <div className="max-w-md w-full bg-card shadow-lg rounded-lg p-8">
             <div className="flex items-center justify-center mb-4">
               <svg
                 className="w-16 h-16 text-red-500"

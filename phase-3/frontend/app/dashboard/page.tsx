@@ -234,7 +234,7 @@ function DashboardContent() {
           title="Active Tasks"
           value={activeTasks}
           icon={List}
-          iconColor="text-indigo-600 dark:text-indigo-400"
+          iconColor="text-primary"
           trend={{
             value: totalTasks > 0 ? ((activeTasks / totalTasks) * 100 - 50) : 0,
             direction: activeTasks > completedTasks ? "up" : "down",

@@ -10,28 +10,28 @@ const techStack = [
     title: "AI Chatbot with MCP Tools",
     description:
       "Our AI chatbot uses advanced MCP (Model Context Protocol) tools to understand and execute your task management requests. Just chat naturally and the AI handles everything.",
-    gradient: "from-indigo-500 to-purple-500",
+    gradient: "from-blue-600 to-blue-400",
   },
   {
     icon: MessageCircle,
     title: "Natural Conversation",
     description:
       "Talk to the AI like you would to a friend. Say 'Add buy groceries' or 'Show my tasks' and get instant responses. The AI understands context and remembers your conversation history.",
-    gradient: "from-purple-500 to-pink-500",
+    gradient: "from-blue-500 to-cyan-500",,
   },
   {
     icon: Zap,
     title: "Real-time Responses",
     description:
       "See the AI's responses stream in real-time as it processes your requests. Watch as it creates tasks, updates lists, and provides helpful suggestions instantly.",
-    gradient: "from-blue-500 to-cyan-500",
+    gradient: "from-cyan-600 to-blue-500",,
   },
   {
     icon: Shield,
     title: "Secure & Private",
     description:
       "Your conversations and tasks are completely private and secure. Each user's data is isolated, and the AI only accesses your information through authenticated sessions.",
-    gradient: "from-green-500 to-emerald-500",
+    gradient: "from-blue-700 to-blue-500",,
   },
   {
     icon: Code,

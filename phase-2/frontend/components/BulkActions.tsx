@@ -65,7 +65,7 @@ export default function BulkActions({
     <div
       className={cn(
         "fixed bottom-0 left-0 right-0 z-50",
-        "bg-blue-600 dark:bg-blue-700 text-white shadow-2xl",
+        "bg-primary/20 text-primary shadow-2xl",
         "border-t-4 border-blue-500",
         "transition-transform duration-300 ease-in-out",
         className
@@ -87,8 +87,8 @@ export default function BulkActions({
                 onClick={allSelected ? onDeselectAll : onSelectAll}
                 className={cn(
                   "text-xs px-2 py-1 rounded",
-                  "bg-blue-500 hover:bg-blue-400 dark:bg-blue-600 dark:hover:bg-blue-500",
-                  "transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                  "bg-primary/40 hover:bg-primary/50 text-primary-foreground",
+                  "transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
                 )}
                 aria-label={allSelected ? "Deselect all tasks" : "Select all tasks"}
               >
@@ -107,7 +107,7 @@ export default function BulkActions({
               className={cn(
                 "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium",
                 "bg-green-600 hover:bg-green-500 disabled:bg-green-800 disabled:opacity-50",
-                "transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                "transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
               )}
               aria-label="Mark selected tasks as complete"
             >
@@ -166,7 +166,7 @@ export default function BulkActions({
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium",
                   "bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800 disabled:opacity-50",
-                  "transition-colors focus:outline-none focus:ring-2 focus:ring-white"
+                  "transition-colors focus:outline-none focus:ring-2 focus:ring-primary"y"
                 )}
                 aria-label="Change priority of selected tasks"
                 aria-haspopup="menu"
@@ -206,7 +206,7 @@ export default function BulkActions({
               {/* Priority Dropdown Menu */}
               {showPriorityMenu && (
                 <div
-                  className="absolute bottom-full mb-2 right-0 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-10"
+                  className="absolute bottom-full mb-2 right-0 w-40 bg-card rounded-md shadow-lg border border-border z-10"
                   role="menu"
                   aria-label="Priority options"
                 >

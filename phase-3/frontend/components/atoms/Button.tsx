@@ -29,11 +29,11 @@ export function Button({
 
   const variantStyles = {
     primary:
-      'glass-card bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 hover:scale-105 focus:ring-indigo-500',
+      'glass-card bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 hover:scale-105 focus:ring-primary',
     secondary:
-      'glass-card bg-gray-500/10 hover:bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-500/30 hover:scale-105 focus:ring-gray-500',
+      'glass-card bg-muted/20 hover:bg-muted/30 text-foreground border-border/50 hover:scale-105 focus:ring-muted',
     ghost:
-      'bg-transparent hover:bg-white/5 text-gray-700 dark:text-gray-300 border-transparent hover:border-white/20 hover:scale-105 focus:ring-gray-500',
+      'bg-transparent hover:bg-primary/10 text-primary border-transparent hover:border-primary/20 hover:scale-105 focus:ring-primary',
   };
 
   const sizeStyles = {

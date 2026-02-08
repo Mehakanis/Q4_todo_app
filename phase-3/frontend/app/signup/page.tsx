@@ -246,7 +246,7 @@ export default function SignupPage() {
             {/* API Error Message */}
             {apiError && (
               <div
-                className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg backdrop-blur-sm"
+                className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg backdrop-blur-sm"
                 role="alert"
               >
                 <p className="text-sm">{apiError}</p>

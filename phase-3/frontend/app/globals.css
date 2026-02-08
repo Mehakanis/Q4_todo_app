@@ -4,25 +4,25 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --card: #ffffff;
-  --card-foreground: #171717;
-  --popover: #ffffff;
-  --popover-foreground: #171717;
-  --primary: #2563eb;
-  --primary-foreground: #f8fafc;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #2563eb;
+  --background: #000000;
+  --foreground: #e0e7ff;
+  --card: #001a4d;
+  --card-foreground: #e0e7ff;
+  --popover: #001a4d;
+  --popover-foreground: #e0e7ff;
+  --primary: #0080ff;
+  --primary-foreground: #ffffff;
+  --secondary: #001a4d;
+  --secondary-foreground: #e0e7ff;
+  --muted: #00264d;
+  --muted-foreground: #9ca3af;
+  --accent: #0052cc;
+  --accent-foreground: #ffffff;
+  --destructive: #ff4444;
+  --destructive-foreground: #ffffff;
+  --border: #0052cc;
+  --input: #0052cc;
+  --ring: #0080ff;
   --radius: 0.5rem;
 }
 
@@ -55,25 +55,25 @@
 :root.dark,
 html.dark,
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #0f172a;
-  --card-foreground: #e2e8f0;
-  --popover: #0f172a;
-  --popover-foreground: #e2e8f0;
-  --primary: #3b82f6;
-  --primary-foreground: #f8fafc;
-  --secondary: #1e293b;
-  --secondary-foreground: #e2e8f0;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #e2e8f0;
-  --destructive: #7f1d1d;
-  --destructive-foreground: #f8fafc;
-  --border: #334155;
-  --input: #334155;
-  --ring: #3b82f6;
+  --background: #000000;
+  --foreground: #e0e7ff;
+  --card: #001a4d;
+  --card-foreground: #e0e7ff;
+  --popover: #001a4d;
+  --popover-foreground: #e0e7ff;
+  --primary: #0080ff;
+  --primary-foreground: #ffffff;
+  --secondary: #001a4d;
+  --secondary-foreground: #e0e7ff;
+  --muted: #00264d;
+  --muted-foreground: #9ca3af;
+  --accent: #0052cc;
+  --accent-foreground: #ffffff;
+  --destructive: #ff4444;
+  --destructive-foreground: #ffffff;
+  --border: #0052cc;
+  --input: #0052cc;
+  --ring: #0080ff;
 }
 
 /* Base styles - use CSS variables for proper dark mode support */
@@ -95,37 +95,37 @@ body {
 @layer utilities {
   .glass-card {
     @apply backdrop-blur-xl border rounded-2xl transition-all duration-300;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px 0 rgba(99, 102, 241, 0.1);
+    background: rgba(0, 128, 255, 0.08);
+    border-color: rgba(0, 128, 255, 0.25);
+    box-shadow: 0 8px 32px 0 rgba(0, 128, 255, 0.1);
   }
 
   .dark .glass-card {
-    background: rgba(31, 41, 55, 0.1);
-    border-color: rgba(75, 85, 99, 0.5);
+    background: rgba(0, 128, 255, 0.08);
+    border-color: rgba(0, 128, 255, 0.3);
   }
 
   .glass-card-elevated {
     @apply backdrop-blur-xl border rounded-2xl transition-all duration-300;
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px 0 rgba(99, 102, 241, 0.2);
+    background: rgba(0, 128, 255, 0.12);
+    border-color: rgba(0, 128, 255, 0.35);
+    box-shadow: 0 8px 32px 0 rgba(0, 128, 255, 0.15);
   }
 
   .dark .glass-card-elevated {
-    background: rgba(31, 41, 55, 0.2);
-    border-color: rgba(75, 85, 99, 0.6);
+    background: rgba(0, 128, 255, 0.12);
+    border-color: rgba(0, 128, 255, 0.4);
   }
 
   .glass-card-flat {
     @apply backdrop-blur-xl border rounded-2xl transition-all duration-300;
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 128, 255, 0.05);
+    border-color: rgba(0, 128, 255, 0.2);
   }
 
   .dark .glass-card-flat {
-    background: rgba(31, 41, 55, 0.05);
-    border-color: rgba(75, 85, 99, 0.4);
+    background: rgba(0, 128, 255, 0.05);
+    border-color: rgba(0, 128, 255, 0.25);
   }
 }
 
@@ -176,26 +176,26 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(243, 244, 246, 0.5);
+  background: rgba(0, 26, 77, 0.5);
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: rgba(17, 24, 39, 0.5);
+  background: rgba(0, 26, 77, 0.8);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.5);
+  background: rgba(0, 128, 255, 0.4);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 0.7);
+  background: rgba(0, 128, 255, 0.6);
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(75, 85, 99, 0.5);
+  background: rgba(0, 128, 255, 0.5);
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(107, 114, 128, 0.7);
+  background: rgba(0, 128, 255, 0.8);
 }

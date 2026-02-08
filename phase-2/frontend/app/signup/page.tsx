@@ -229,7 +229,7 @@ export default function SignupPage() {
   const passwordStrength = getPasswordStrength(formData.password);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-foreground/5 dark:bg-background px-4 py-12">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
@@ -241,7 +241,7 @@ export default function SignupPage() {
 
         {/* Signup Form */}
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 py-6 space-y-6">
+          <div className="bg-card shadow-md rounded-lg px-8 py-6 space-y-6">
             {/* API Error Message */}
             {apiError && (
               <div
@@ -423,7 +423,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? (
                 <LoadingSpinner size="small" color="white" label="Creating account..." />

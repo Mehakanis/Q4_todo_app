@@ -74,7 +74,7 @@ export default function ChatPage() {
           {/* Mobile Toggle Button */}
           <button
             onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            className="md:hidden fixed top-4 right-4 z-50 p-2 rounded-lg bg-blue-500 text-white"
+            className="md:hidden fixed top-4 right-4 z-50 p-2 rounded-lg bg-primary text-primary-foreground"
           >
             {isMobileSidebarOpen ? "✕" : "☰"}
           </button>
@@ -83,7 +83,7 @@ export default function ChatPage() {
           <div
             className={`${
               isMobileSidebarOpen ? "block" : "hidden"
-            } md:block absolute md:relative top-0 left-0 right-0 md:w-64 z-40 md:z-auto bg-white dark:bg-gray-900 md:bg-transparent p-4 md:p-0 md:flex md:flex-col`}
+            } md:block absolute md:relative top-0 left-0 right-0 md:w-64 z-40 md:z-auto bg-card p-4 md:p-0 md:flex md:flex-col`}
           >
             {user && jwtToken && (
               <ConversationHistory
@@ -109,7 +109,7 @@ export default function ChatPage() {
                 <div className="flex gap-2">
                   <button
                     title="New chat"
-                    className="px-3 py-1 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                    className="px-3 py-1 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                   >
                     + New
                   </button>

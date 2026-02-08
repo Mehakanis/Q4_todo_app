@@ -319,7 +319,7 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-foreground/5 dark:bg-background transition-colors duration-200">
       {/* Keyboard shortcuts */}
       <KeyboardShortcuts
         onSearchToggle={() => {

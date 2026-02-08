@@ -20,10 +20,10 @@ export function LandingHero() {
         <motion.div
           animate={{
             background: [
-              "radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.1) 0%, transparent 50%)",
-              "radial-gradient(circle at 80% 80%, rgba(37, 99, 235, 0.15) 0%, transparent 50%)",
-              "radial-gradient(circle at 40% 20%, rgba(37, 99, 235, 0.1) 0%, transparent 50%)",
-              "radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.1) 0%, transparent 50%)",
+              "radial-gradient(circle at 20% 50%, rgba(0, 128, 255, 0.15) 0%, transparent 50%)",
+              "radial-gradient(circle at 80% 80%, rgba(0, 80, 200, 0.2) 0%, transparent 50%)",
+              "radial-gradient(circle at 40% 20%, rgba(0, 100, 255, 0.15) 0%, transparent 50%)",
+              "radial-gradient(circle at 20% 50%, rgba(0, 128, 255, 0.15) 0%, transparent 50%)",
             ],
           }}
           transition={{

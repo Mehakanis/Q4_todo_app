@@ -198,7 +198,7 @@ function CalendarContent() {
                           {dayTasks.slice(0, 2).map((task) => (
                             <div
                               key={task.id}
-                              className="text-xs p-1 rounded bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 truncate"
+                              className="text-xs p-1 rounded bg-primary/20 text-primary truncate"
                             >
                               {task.title}
                             </div>

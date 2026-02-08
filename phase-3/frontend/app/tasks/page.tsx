@@ -407,7 +407,7 @@ function TasksContent() {
                   "bg-gray-800/90 dark:bg-gray-900/90",
                   "text-white hover:bg-gray-700/90 dark:hover:bg-gray-800/90",
                   "transition-all duration-200 shadow-md hover:shadow-lg",
-                  "hover:border-gray-600 dark:hover:border-gray-500"
+                  "hover:border-primary dark:hover:border-primary"
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -509,7 +509,7 @@ function TasksContent() {
               "bg-indigo-600/85 dark:bg-indigo-700/85",
               "text-white hover:bg-indigo-600 dark:hover:bg-indigo-600",
               "transition-all duration-200 shadow-md hover:shadow-lg",
-              "hover:border-indigo-500 dark:hover:border-indigo-400",
+              "hover:border-primary dark:hover:border-primary",
               "hover:scale-[1.01] active:scale-[0.99]"
             )}>
               <input

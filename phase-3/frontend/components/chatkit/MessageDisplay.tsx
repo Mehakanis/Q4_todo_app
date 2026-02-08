@@ -116,8 +116,8 @@ export function MessageDisplay({
               <div
                 className={`px-4 py-3 rounded-2xl ${
                   message.role === "user"
-                    ? "bg-blue-500 text-white rounded-br-none"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-none"
+                    ? "bg-primary text-primary-foreground rounded-br-none"
+                    : "bg-muted text-foreground rounded-bl-none"
                 }`}
               >
                 {/* Message content */}
