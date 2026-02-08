@@ -29,57 +29,50 @@ useEffect(() => {
     return isStandaloneMode;
   };
 
-  // rest of your effect...
+  // Check if already installed
+  if (checkStandalone()) {
+    return; // Don't show button if already installed
+  }
 
+  const handleBeforeInstallPrompt = (e: Event) => {
+    // IMPORTANT: Don't preventDefault() - this allows browser to show install icon in address bar
+    // The browser will automatically show the install icon when PWA criteria are met
+    const installEvent = e as BeforeInstallPromptEvent;
+    setDeferredPrompt(installEvent);
+    setShowButton(true);
+    
+    // Browser will show install icon in address bar automatically
+    // Our custom button provides an alternative way to trigger the same prompt
+    // Both will work - browser's native icon and our custom button
+  };
 
+  const handleAppInstalled = () => {
+    // Clear the deferredPrompt
+    setDeferredPrompt(null);
+    setShowButton(false);
+    setIsStandalone(true);
+  };
 
-    // Check if already installed
-    if (checkStandalone()) {
-      return; // Don't show button if already installed
-    }
+  // Check if service worker is registered (required for PWA)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistration().then((registration) => {
+      if (registration) {
+        window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      } else {
+        setTimeout(() => setShowButton(true), 0);  // ✅ Defer setState
+      }
+    });
+  } else {
+    setTimeout(() => setShowButton(true), 0);  // ✅ Defer setState
+  }
 
-    const handleBeforeInstallPrompt = (e: Event) => {
-      // IMPORTANT: Don't preventDefault() - this allows browser to show install icon in address bar
-      // The browser will automatically show the install icon when PWA criteria are met
-      const installEvent = e as BeforeInstallPromptEvent;
-      setDeferredPrompt(installEvent);
-      setShowButton(true);
-      
-      // Browser will show install icon in address bar automatically
-      // Our custom button provides an alternative way to trigger the same prompt
-      // Both will work - browser's native icon and our custom button
-    };
+  window.addEventListener("appinstalled", handleAppInstalled);
 
-    const handleAppInstalled = () => {
-      // Clear the deferredPrompt
-      setDeferredPrompt(null);
-      setShowButton(false);
-      setIsStandalone(true);
-    };
-
-    // Check if service worker is registered (required for PWA)
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistration().then((registration) => {
-        if (registration) {
-          // Service worker is registered, listen for install prompt
-          window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-        } else {
-          // No service worker, but still show button for manual install
-          setShowButton(true);
-        }
-      });
-    } else {
-      // Service workers not supported, but show button for manual install
-      setShowButton(true);
-    }
-
-    window.addEventListener("appinstalled", handleAppInstalled);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
-  }, []);
+  return () => {
+    window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.removeEventListener("appinstalled", handleAppInstalled);
+  };
+}, []);
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
@@ -149,4 +142,3 @@ useEffect(() => {
     </button>
   );
 }
-
