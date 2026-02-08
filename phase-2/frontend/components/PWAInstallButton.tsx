@@ -13,16 +13,25 @@ export default function PWAInstallButton() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [showButton, setShowButton] = useState(false);
 
-  useEffect(() => {
-    // Check if app is already installed (standalone mode)
-    const checkStandalone = () => {
-      const isStandaloneMode =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as any).standalone === true ||
-        document.referrer.includes("android-app://");
-      setIsStandalone(isStandaloneMode);
-      return isStandaloneMode;
-    };
+  interface NavigatorWithStandalone extends Navigator {
+  standalone?: boolean;
+}
+
+useEffect(() => {
+  const checkStandalone = () => {
+    const nav = window.navigator as NavigatorWithStandalone;
+    const isStandaloneMode =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      nav.standalone === true || // now properly typed
+      document.referrer.includes("android-app://");
+
+    setIsStandalone(isStandaloneMode);
+    return isStandaloneMode;
+  };
+
+  // rest of your effect...
+
+
 
     // Check if already installed
     if (checkStandalone()) {

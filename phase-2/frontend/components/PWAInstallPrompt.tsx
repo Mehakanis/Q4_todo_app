@@ -15,13 +15,17 @@ export default function PWAInstallPrompt() {
   const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
+    // Extend Navigator type to include standalone (for iOS)
+    interface NavigatorWithStandalone extends Navigator {
+      standalone?: boolean;
+    }
+
     // Check if app is already installed (standalone mode)
     const checkStandalone = () => {
+      const nav = window.navigator as NavigatorWithStandalone; // properly typed
       const isStandaloneMode =
         window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as any).standalone === true ||
-        document.referrer.includes("android-app://");
-      setIsStandalone(isStandaloneMode);
+        nav.standalone === true; // safe
       return isStandaloneMode;
     };
 
