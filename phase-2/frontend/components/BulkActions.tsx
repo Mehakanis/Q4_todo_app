@@ -166,7 +166,7 @@ export default function BulkActions({
                 className={cn(
                   "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium",
                   "bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800 disabled:opacity-50",
-                  "transition-colors focus:outline-none focus:ring-2 focus:ring-primary"y"
+                  "transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
                 )}
                 aria-label="Change priority of selected tasks"
                 aria-haspopup="menu"

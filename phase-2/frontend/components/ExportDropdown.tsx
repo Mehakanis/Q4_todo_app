@@ -248,10 +248,9 @@ function ExportDropdown({ userId, disabled = false, className = "" }: ExportDrop
         <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             ref={buttonRef}
-            variant="outline"
             disabled={disabled || isExporting}
             onClick={() => setIsOpen(!isOpen)}
-            className="w-full justify-start"
+            className="w-full justify-start border border-border"
           >
             {isExporting ? (
               <>
